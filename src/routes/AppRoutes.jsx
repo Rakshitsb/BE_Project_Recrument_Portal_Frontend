@@ -13,7 +13,7 @@ const ProfileSetup  = lazy(() => import('../pages/candidate/ProfileSetup'))
 
 // Candidate pages
 const CandidateDashboard = lazy(() => import('../pages/candidate/CandidateDashboard'))
-const JobListings        = lazy(() => import('../pages/candidate/JobListings'))
+const JobsPage           = lazy(() => import('../pages/candidate/Jobs'))
 const MyApplications     = lazy(() => import('../pages/candidate/MyApplications'))
 
 // HR pages
@@ -49,8 +49,17 @@ function AppRoutes() {
           <Route element={<ProfileSetupGuard />}>
             <Route element={<MainLayout role="candidate" />}>
               <Route path="/candidate"              element={<CandidateDashboard />} />
-              <Route path="/candidate/jobs"         element={<JobListings />} />
+              <Route path="/candidate/jobs"         element={<JobsPage />} />
               <Route path="/candidate/applications" element={<MyApplications />} />
+            </Route>
+          </Route>
+        </Route>
+
+        {/* Public jobs landing (reuses candidate layout + guard) */}
+        <Route element={<ProtectedRoute allowedRoles={['candidate']} />}>
+          <Route element={<ProfileSetupGuard />}>
+            <Route element={<MainLayout role="candidate" />}>
+              <Route path="/jobs" element={<JobsPage />} />
             </Route>
           </Route>
         </Route>
