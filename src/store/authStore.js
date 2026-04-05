@@ -10,6 +10,7 @@ const useAuthStore = create(
     (set) => ({
       user: null,
       token: null,
+      role: null,
       isAuthenticated: false,
 
       /** Called after a successful login API response */
@@ -17,6 +18,7 @@ const useAuthStore = create(
         set({
           user: userData,
           token,
+          role: userData.role,
           isAuthenticated: true,
         }),
 
@@ -25,6 +27,7 @@ const useAuthStore = create(
         set({
           user: null,
           token: null,
+          role: null,
           isAuthenticated: false,
         }),
 
@@ -37,8 +40,9 @@ const useAuthStore = create(
     {
       name: 'auth-storage', // localStorage key
       partialize: (state) => ({
-        user: state.user,
-        token: state.token,
+        user:            state.user,
+        token:           state.token,
+        role:            state.role,
         isAuthenticated: state.isAuthenticated,
       }),
     },

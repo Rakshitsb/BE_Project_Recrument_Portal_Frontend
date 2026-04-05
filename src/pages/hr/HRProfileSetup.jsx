@@ -40,7 +40,7 @@ export function HRProfileSetup() {
   const handleSubmit = (allData) => {
     setSubmitting(true)
     setTimeout(() => {
-      updateUser({ hasProfile: true, ...allData })
+      updateUser({ profileCompleted: true, ...allData })
       message.success('Profile created successfully!')
       setSubmitting(false)
       navigate('/hr', { replace: true })

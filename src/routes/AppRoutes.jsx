@@ -6,6 +6,7 @@ import AuthLayout    from '../layouts/AuthLayout'
 import { AdminLayout }      from '../layouts/AdminLayout'
 import ProtectedRoute       from '../components/common/ProtectedRoute'
 import ProfileSetupGuard    from '../components/common/ProfileSetupGuard'
+import HRSetupGuard         from '../components/common/HRSetupGuard'
 
 // ── Lazy-loaded pages ─────────────────────────────────────────────
 const LoginPage     = lazy(() => import('../pages/auth/LoginPage'))
@@ -81,13 +82,15 @@ function AppRoutes() {
           </Route>
         </Route>
 
-        {/* HR protected routes */}
+        {/* HR protected routes (also checks HR profile completion) */}
         <Route element={<ProtectedRoute allowedRoles={['hr']} />}>
-          <Route element={<MainLayout role="hr" />}>
-            <Route path="/hr"                  element={<HRDashboard />} />
-            <Route path="/hr/jobs"             element={<ManageJobs />} />
-            <Route path="/hr/applications"     element={<Applications />} />
-            <Route path="/hr/profile"          element={<HRProfile />} />
+          <Route element={<HRSetupGuard />}>
+            <Route element={<MainLayout role="hr" />}>
+              <Route path="/hr"                  element={<HRDashboard />} />
+              <Route path="/hr/jobs"             element={<ManageJobs />} />
+              <Route path="/hr/applications"     element={<Applications />} />
+              <Route path="/hr/profile"          element={<HRProfile />} />
+            </Route>
           </Route>
         </Route>
 

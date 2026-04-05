@@ -2,7 +2,6 @@ import { Form, Input, Button, Checkbox, Divider, Typography } from 'antd'
 import { MailOutlined, LockOutlined } from '@ant-design/icons'
 import { Link } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth'
-import { DemoCredentialBanner } from './DemoCredentialBanner'
 
 const { Title, Text } = Typography
 
@@ -21,7 +20,6 @@ function LoginPage() {
         <Text type="secondary">Sign in to your HireBase account</Text>
       </div>
 
-      <DemoCredentialBanner onFill={(email) => form.setFieldsValue({ email, password: 'demo1234' })} />
 
       <Form
         form={form}
@@ -29,6 +27,7 @@ function LoginPage() {
         onFinish={onFinish}
         requiredMark={false}
         size="large"
+        disabled={loading}
       >
         <Form.Item
           name="email"

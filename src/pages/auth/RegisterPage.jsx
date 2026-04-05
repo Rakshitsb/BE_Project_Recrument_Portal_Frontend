@@ -26,6 +26,7 @@ function RegisterPage() {
         onFinish={onFinish}
         requiredMark={false}
         size="large"
+        disabled={loading}
       >
         <Form.Item
           name="name"
