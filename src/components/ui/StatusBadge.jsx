@@ -31,3 +31,5 @@ export function StatusBadge({ status }) {
 
   return <Tag color={color}>{label}</Tag>
 }
+
+export default StatusBadge

@@ -37,3 +37,5 @@ export function EmptyState({ icon, message, action }) {
     </div>
   )
 }
+
+export default EmptyState

@@ -59,3 +59,5 @@ export function StatCard({ title, value, icon, color = 'blue', trend }) {
     </Card>
   )
 }
+
+export default StatCard

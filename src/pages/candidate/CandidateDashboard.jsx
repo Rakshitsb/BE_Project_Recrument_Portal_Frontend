@@ -38,8 +38,8 @@ function CandidateDashboard() {
             title="Jobs Applied"
             value={12}
             icon={<FileSearchOutlined />}
-            color="#1890ff"
-            trend="↑ 3 this week"
+            color="blue"
+            trend={{ value: 3, up: true }}
           />
         </Col>
         <Col xs={24} sm={12} lg={6}>
@@ -47,8 +47,8 @@ function CandidateDashboard() {
             title="Interviews"
             value={4}
             icon={<CheckCircleOutlined />}
-            color="#52c41a"
-            trend="↑ 1 scheduled"
+            color="green"
+            trend={{ value: 1, up: true }}
           />
         </Col>
         <Col xs={24} sm={12} lg={6}>
@@ -56,7 +56,7 @@ function CandidateDashboard() {
             title="Pending Reviews"
             value={6}
             icon={<ClockCircleOutlined />}
-            color="#faad14"
+            color="orange"
           />
         </Col>
         <Col xs={24} sm={12} lg={6}>
@@ -64,7 +64,7 @@ function CandidateDashboard() {
             title="Saved Jobs"
             value={18}
             icon={<FireOutlined />}
-            color="#ff4d4f"
+            color="purple"
           />
         </Col>
       </Row>

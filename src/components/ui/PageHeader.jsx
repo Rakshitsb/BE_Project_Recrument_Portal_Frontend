@@ -42,3 +42,5 @@ export function PageHeader({ title, subtitle, actions }) {
     </div>
   )
 }
+
+export default PageHeader

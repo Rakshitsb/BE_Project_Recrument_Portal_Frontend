@@ -66,3 +66,5 @@ export function ConfirmModal({
     </Modal>
   )
 }
+
+export default ConfirmModal
