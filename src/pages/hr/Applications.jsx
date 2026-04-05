@@ -1,96 +1,136 @@
-import { useState } from 'react'
-import { Table, Button, Avatar, Typography, Space, Select, Input } from 'antd'
-import { EyeOutlined, SearchOutlined } from '@ant-design/icons'
-import StatusBadge from '../../components/ui/StatusBadge'
+import { useState, useMemo } from 'react'
+import { Row, Col, Button, Tag, Drawer } from 'antd'
+import { UserOutlined } from '@ant-design/icons'
 
-const { Title, Text } = Typography
-const { Option } = Select
+import { PageHeader, DataTable, StatusBadge, EmptyState } from '../../components/ui'
+import { ApplicationFilters } from '../../components/hr/ApplicationFilters'
+import { ApplicantCard }      from '../../components/hr/ApplicantCard'
 
-const mockApplications = [
-  { id: 1, name: 'Alice Johnson',  role: 'Senior React Developer', status: 'interview', applied: '2026-03-22', experience: '5 yrs' },
-  { id: 2, name: 'Bob Smith',      role: 'Backend Engineer',       status: 'pending',   applied: '2026-03-21', experience: '3 yrs' },
-  { id: 3, name: 'Carol White',    role: 'UI/UX Designer',         status: 'reviewed',  applied: '2026-03-20', experience: '4 yrs' },
-  { id: 4, name: 'Dan Lee',        role: 'DevOps Engineer',        status: 'accepted',  applied: '2026-03-18', experience: '7 yrs' },
-  { id: 5, name: 'Eva Rodriguez',  role: 'Product Manager',        status: 'rejected',  applied: '2026-03-15', experience: '6 yrs' },
-  { id: 6, name: 'Frank Kim',      role: 'Senior React Developer', status: 'pending',   applied: '2026-03-14', experience: '2 yrs' },
+// ── Mock Data (replace with API calls later) ─────────────────────
+const MOCK_JOBS = [
+  { id: 'j1', title: 'Senior Backend Developer' },
+  { id: 'j2', title: 'Product Designer' },
+  { id: 'j3', title: 'DevOps Engineer' },
+  { id: 'j4', title: 'Data Analyst' },
 ]
 
-function Applications() {
-  const [search,     setSearch]     = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+const MOCK_APPLICATIONS = [
+  { id: 'a1',  jobId: 'j1', jobTitle: 'Senior Backend Developer', candidateName: 'Priya Sharma',   candidateEmail: 'priya@email.com',   candidatePhone: '+91 98765 43210', location: 'Pune, India',      skills: ['Node.js', 'PostgreSQL', 'Docker'],         experienceYears: 4, education: 'B.Tech Computer Science', coverLetter: 'I am excited to apply for this role and bring my backend expertise to your team.',     status: 'interview',   appliedDate: '2026-03-28' },
+  { id: 'a2',  jobId: 'j1', jobTitle: 'Senior Backend Developer', candidateName: 'Rohan Mehta',    candidateEmail: 'rohan@email.com',   candidatePhone: '+91 87654 32109', location: 'Mumbai, India',     skills: ['Java', 'Spring Boot', 'Redis'],             experienceYears: 5, education: 'M.Tech Software Engineering', coverLetter: 'With 5 years of backend experience, I am confident I can add immediate value.',         status: 'applied',     appliedDate: '2026-03-30' },
+  { id: 'a3',  jobId: 'j2', jobTitle: 'Product Designer',         candidateName: 'Anita Verma',    candidateEmail: 'anita@email.com',   candidatePhone: '+91 76543 21098', location: 'Bangalore, India',  skills: ['Figma', 'User Research', 'Prototyping'],   experienceYears: 3, education: 'B.Des Interaction Design',   coverLetter: 'Design is my passion. I would love to shape experiences that delight users.',          status: 'shortlisted', appliedDate: '2026-03-25' },
+  { id: 'a4',  jobId: 'j2', jobTitle: 'Product Designer',         candidateName: 'Karan Patel',    candidateEmail: 'karan@email.com',   candidatePhone: '+91 65432 10987', location: 'Hyderabad, India',  skills: ['Adobe XD', 'Sketch', 'CSS'],               experienceYears: 2, education: 'B.Sc Visual Design',         coverLetter: '',                                                                                     status: 'rejected',    appliedDate: '2026-03-22' },
+  { id: 'a5',  jobId: 'j3', jobTitle: 'DevOps Engineer',          candidateName: 'Sneha Kulkarni', candidateEmail: 'sneha@email.com',   candidatePhone: '+91 54321 09876', location: 'Remote',            skills: ['AWS', 'Kubernetes', 'Terraform', 'CI/CD'], experienceYears: 4, education: 'B.Tech Information Technology', coverLetter: 'Cloud infrastructure is where I thrive. I am eager to optimise your pipelines.',      status: 'under_review', appliedDate: '2026-03-27' },
+  { id: 'a6',  jobId: 'j3', jobTitle: 'DevOps Engineer',          candidateName: 'Amit Singh',     candidateEmail: 'amit@email.com',   candidatePhone: '+91 43210 98765', location: 'Delhi, India',      skills: ['GCP', 'Ansible', 'Linux'],                 experienceYears: 6, education: 'B.E. Computer Engineering',  coverLetter: 'I have 6 years managing large-scale cloud environments and automated deployments.',   status: 'selected',    appliedDate: '2026-03-20' },
+  { id: 'a7',  jobId: 'j4', jobTitle: 'Data Analyst',             candidateName: 'Divya Rao',      candidateEmail: 'divya@email.com',  candidatePhone: '+91 32109 87654', location: 'Chennai, India',    skills: ['Python', 'SQL', 'Tableau'],                experienceYears: 2, education: 'M.Sc Statistics',            coverLetter: 'Data storytelling is my strength. I can help translate numbers into actionable insight.', status: 'interview',   appliedDate: '2026-03-29' },
+  { id: 'a8',  jobId: 'j4', jobTitle: 'Data Analyst',             candidateName: 'Vikram Nair',    candidateEmail: 'vikram@email.com', candidatePhone: '+91 21098 76543', location: 'Kochi, India',      skills: ['Excel', 'Power BI', 'R'],                  experienceYears: 3, education: 'B.Sc Mathematics',           coverLetter: '',                                                                                     status: 'applied',     appliedDate: '2026-04-01' },
+  { id: 'a9',  jobId: 'j1', jobTitle: 'Senior Backend Developer', candidateName: 'Pooja Desai',    candidateEmail: 'pooja@email.com',  candidatePhone: '+91 10987 65432', location: 'Ahmedabad, India',  skills: ['Go', 'gRPC', 'Kafka'],                     experienceYears: 5, education: 'B.Tech Computer Science', coverLetter: 'Distributed systems are my specialty. I look forward to scaling your backend architecture.', status: 'shortlisted', appliedDate: '2026-03-31' },
+  { id: 'a10', jobId: 'j2', jobTitle: 'Product Designer',         candidateName: 'Nikhil Joshi',   candidateEmail: 'nikhil@email.com', candidatePhone: '+91 09876 54321', location: 'Pune, India',       skills: ['Figma', 'Motion Design', 'HTML', 'CSS'],  experienceYears: 4, education: 'B.Des Product Design',       coverLetter: 'I bring both visual and interaction design expertise, plus frontend implementation skills.', status: 'under_review', appliedDate: '2026-04-02' },
+]
+// ─────────────────────────────────────────────────────────────────
 
-  const filtered = mockApplications.filter((a) => {
-    const matchSearch =
-      a.name.toLowerCase().includes(search.toLowerCase()) ||
-      a.role.toLowerCase().includes(search.toLowerCase())
-    const matchStatus = statusFilter === 'all' || a.status === statusFilter
-    return matchSearch && matchStatus
-  })
+/**
+ * Applications
+ * HR page for reviewing and managing all candidate applications.
+ * Supports filtering by job and status, inline profile panel, and a mobile drawer.
+ */
+export function Applications() {
+  const [applications, setApplications] = useState(MOCK_APPLICATIONS)
+  const [selectedJobId,  setSelectedJobId]  = useState(null)
+  const [selectedStatus, setSelectedStatus] = useState(null)
+  const [selectedApp,    setSelectedApp]    = useState(null)
+  const [drawerOpen,     setDrawerOpen]     = useState(false)
 
+  // ── Derived: filtered list ────────────────────────────────────────
+  const filteredApps = useMemo(() => {
+    return applications.filter((app) => {
+      const matchJob    = !selectedJobId    || app.jobId  === selectedJobId
+      const matchStatus = !selectedStatus   || app.status === selectedStatus
+      return matchJob && matchStatus
+    })
+  }, [applications, selectedJobId, selectedStatus])
+
+  // ── Handlers ──────────────────────────────────────────────────────
+  const handleView = (app) => {
+    setSelectedApp(app)
+    setDrawerOpen(true)
+  }
+
+  const handleStatusChange = (appId, newStatus) => {
+    setApplications((prev) =>
+      prev.map((a) => (a.id === appId ? { ...a, status: newStatus } : a))
+    )
+    setSelectedApp((prev) => (prev?.id === appId ? { ...prev, status: newStatus } : prev))
+  }
+
+  // ── Table columns ─────────────────────────────────────────────────
   const columns = [
-    {
-      title: 'Applicant',
-      key: 'applicant',
-      render: (_, record) => (
-        <Space>
-          <Avatar style={{ backgroundColor: '#1890ff' }}>{record.name[0]}</Avatar>
-          <div>
-            <Text strong>{record.name}</Text>
-            <br />
-            <Text type="secondary" style={{ fontSize: 12 }}>{record.experience}</Text>
-          </div>
-        </Space>
-      ),
-    },
-    { title: 'Applied For',  dataIndex: 'role',    key: 'role' },
-    { title: 'Applied On',   dataIndex: 'applied', key: 'applied' },
+    { title: 'Candidate', dataIndex: 'candidateName', key: 'candidateName' },
+    { title: 'Job',       dataIndex: 'jobTitle',       key: 'jobTitle' },
+    { title: 'Applied',   dataIndex: 'appliedDate',    key: 'appliedDate' },
     {
       title: 'Status', dataIndex: 'status', key: 'status',
       render: (status) => <StatusBadge status={status} />,
     },
     {
       title: 'Action', key: 'action',
-      render: () => (
-        <Button type="primary" ghost size="small" icon={<EyeOutlined />}>
-          Review
-        </Button>
+      render: (_, record) => (
+        <Button type="text" size="small" onClick={() => handleView(record)}>View</Button>
       ),
     },
   ]
 
   return (
     <div className="fade-in-up">
-      <div style={{ marginBottom: 20 }}>
-        <Title level={3} style={{ margin: 0 }}>All Applications</Title>
-        <Text type="secondary">Review and manage candidate applications</Text>
-      </div>
 
-      {/* Filters */}
-      <Space style={{ marginBottom: 16 }}>
-        <Input
-          prefix={<SearchOutlined />}
-          placeholder="Search applicants..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ width: 280 }}
-        />
-        <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 160 }}>
-          <Option value="all">All Statuses</Option>
-          <Option value="pending">Pending</Option>
-          <Option value="reviewed">Reviewed</Option>
-          <Option value="interview">Interview</Option>
-          <Option value="accepted">Accepted</Option>
-          <Option value="rejected">Rejected</Option>
-        </Select>
-      </Space>
-
-      <Table
-        dataSource={filtered}
-        columns={columns}
-        rowKey="id"
-        className="card-shadow"
-        pagination={{ pageSize: 10 }}
+      <PageHeader
+        title="Applications"
+        subtitle="Review and manage candidate applications"
+        actions={<Tag color="blue">{filteredApps.length} Applications</Tag>}
       />
+
+      <ApplicationFilters
+        jobs={MOCK_JOBS}
+        selectedJobId={selectedJobId}
+        selectedStatus={selectedStatus}
+        onJobChange={setSelectedJobId}
+        onStatusChange={setSelectedStatus}
+      />
+
+      <Row gutter={16}>
+        <Col xs={24} lg={14}>
+          <DataTable
+            columns={columns}
+            dataSource={filteredApps}
+            loading={false}
+            emptyText="No applications match the current filters."
+            extraProps={{
+              onRow: (record) => ({ onClick: () => handleView(record), style: { cursor: 'pointer' } }),
+            }}
+          />
+        </Col>
+
+        <Col xs={0} lg={10}>
+          {selectedApp ? (
+            <ApplicantCard applicant={selectedApp} onStatusChange={handleStatusChange} />
+          ) : (
+            <EmptyState icon={<UserOutlined />} message="Select an applicant to view their profile" />
+          )}
+        </Col>
+      </Row>
+
+      <Drawer
+        title={selectedApp?.candidateName}
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        width={480}
+        placement="right"
+        destroyOnClose={false}
+      >
+        {selectedApp && (
+          <ApplicantCard applicant={selectedApp} onStatusChange={handleStatusChange} />
+        )}
+      </Drawer>
+
     </div>
   )
 }

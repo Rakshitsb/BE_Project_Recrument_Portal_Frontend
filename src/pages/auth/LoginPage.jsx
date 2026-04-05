@@ -1,25 +1,17 @@
 import { Form, Input, Button, Checkbox, Divider, Typography } from 'antd'
-import { MailOutlined, LockOutlined, InfoCircleOutlined } from '@ant-design/icons'
+import { MailOutlined, LockOutlined } from '@ant-design/icons'
 import { Link } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth'
+import { DemoCredentialBanner } from './DemoCredentialBanner'
 
 const { Title, Text } = Typography
 
-// Demo credential quick-fill options
-const DEMO_ACCOUNTS = [
-  { label: '👤 Candidate', email: 'candidate@demo.com', color: '#1890ff', bg: '#e6f4ff' },
-  { label: '🧑‍💼 HR',        email: 'hr@demo.com',        color: '#722ed1', bg: '#f9f0ff' },
-]
 
 function LoginPage() {
   const { login, loading } = useAuth()
   const [form] = Form.useForm()
 
   const onFinish = (values) => login(values)
-
-  const fillDemo = (email) => {
-    form.setFieldsValue({ email, password: 'demo1234' })
-  }
 
   return (
     <div className="auth-card fade-in-up">
@@ -29,51 +21,7 @@ function LoginPage() {
         <Text type="secondary">Sign in to your HireBase account</Text>
       </div>
 
-      {/* Demo hint banner */}
-      <div
-        style={{
-          background: '#fffbe6',
-          border: '1px solid #ffe58f',
-          borderRadius: 8,
-          padding: '10px 14px',
-          marginBottom: 20,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-          <InfoCircleOutlined style={{ color: '#d48806' }} />
-          <Text style={{ fontSize: 12, fontWeight: 600, color: '#d48806' }}>
-            Demo Mode — click to auto-fill credentials
-          </Text>
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {DEMO_ACCOUNTS.map((acc) => (
-            <button
-              key={acc.email}
-              type="button"
-              onClick={() => fillDemo(acc.email)}
-              style={{
-                flex: 1,
-                padding: '6px 10px',
-                border: `1px solid ${acc.color}`,
-                borderRadius: 6,
-                background: acc.bg,
-                color: acc.color,
-                fontWeight: 600,
-                fontSize: 13,
-                cursor: 'pointer',
-                transition: 'opacity 0.2s',
-              }}
-              onMouseEnter={(e) => (e.target.style.opacity = 0.75)}
-              onMouseLeave={(e) => (e.target.style.opacity = 1)}
-            >
-              {acc.label}
-            </button>
-          ))}
-        </div>
-        <Text style={{ fontSize: 11, color: '#8c6914', display: 'block', marginTop: 6 }}>
-          Password: <strong>demo1234</strong>
-        </Text>
-      </div>
+      <DemoCredentialBanner onFill={(email) => form.setFieldsValue({ email, password: 'demo1234' })} />
 
       <Form
         form={form}

@@ -17,7 +17,8 @@ function ProtectedRoute({ allowedRoles = [] }) {
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
     // Redirect to the user's home based on their actual role
-    const rolePath = user?.role === 'hr' ? '/hr' : '/candidate'
+    const ROLE_HOME = { hr: '/hr', admin: '/admin' }
+    const rolePath = ROLE_HOME[user?.role] ?? '/candidate'
     return <Navigate to={rolePath} replace />
   }
 

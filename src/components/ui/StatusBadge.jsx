@@ -1,22 +1,33 @@
 import { Tag } from 'antd'
 
-const statusConfig = {
-  pending:   { color: 'gold',    label: 'Pending' },
-  reviewed:  { color: 'blue',    label: 'Reviewed' },
-  interview: { color: 'purple',  label: 'Interview' },
-  accepted:  { color: 'success', label: 'Accepted' },
-  rejected:  { color: 'error',   label: 'Rejected' },
+/**
+ * Color mapping for known recruitment status values.
+ * Unknown statuses fall back to 'default'.
+ */
+const STATUS_COLOR_MAP = {
+  applied:       'blue',
+  under_review:  'orange',
+  shortlisted:   'cyan',
+  interview:     'purple',
+  selected:      'green',
+  rejected:      'red',
+  active:        'green',
+  inactive:      'default',
 }
 
 /**
  * StatusBadge
- * Renders a color-coded Ant Design Tag for application statuses.
+ * Renders a color-coded Ant Design Tag for recruitment-related statuses.
  *
- * @param {{ status: string }} props
+ * @param {object} props
+ * @param {string} props.status - Status key (e.g. 'applied', 'under_review', 'selected')
  */
-function StatusBadge({ status }) {
-  const config = statusConfig[status] || { color: 'default', label: status }
-  return <Tag color={config.color}>{config.label}</Tag>
-}
+export function StatusBadge({ status }) {
+  const color = STATUS_COLOR_MAP[status] ?? 'default'
 
-export default StatusBadge
+  const label = status
+    ? status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+    : 'Unknown'
+
+  return <Tag color={color}>{label}</Tag>
+}

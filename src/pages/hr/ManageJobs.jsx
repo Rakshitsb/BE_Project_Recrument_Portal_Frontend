@@ -1,148 +1,189 @@
 import { useState } from 'react'
-import {
-  Table, Button, Tag, Space, Typography, Modal, Form, Input, Select, Row, Col,
-} from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons'
+import { Button } from 'antd'
+import { PlusOutlined } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
 
-const { Title, Text } = Typography
-const { Option } = Select
-const { TextArea } = Input
+import { PageHeader, ConfirmModal } from '../../components/ui'
+import { JobsTable } from '../../components/hr/JobsTable'
+import { JobForm } from '../../components/hr/JobForm'
 
-const initialJobs = [
-  { id: 1, title: 'Senior React Developer', department: 'Engineering', location: 'Remote',        type: 'Full-time', status: 'active',  applicants: 34, posted: '2026-03-15' },
-  { id: 2, title: 'Backend Engineer',       department: 'Engineering', location: 'New York, NY',  type: 'Full-time', status: 'active',  applicants: 21, posted: '2026-03-17' },
-  { id: 3, title: 'UI/UX Designer',         department: 'Design',      location: 'San Francisco', type: 'Contract',  status: 'paused',  applicants: 18, posted: '2026-03-10' },
-  { id: 4, title: 'DevOps Engineer',        department: 'Engineering', location: 'Remote',        type: 'Full-time', status: 'active',  applicants: 12, posted: '2026-03-20' },
-  { id: 5, title: 'Product Manager',        department: 'Product',     location: 'Austin, TX',    type: 'Full-time', status: 'closed',  applicants: 58, posted: '2026-03-01' },
+// ── Mock Data (replace with API calls later) ─────────────────────
+const INITIAL_JOBS = [
+  {
+    id: '1',
+    title: 'Senior Backend Developer',
+    location: 'Pune, India',
+    jobType: 'Full-Time',
+    experienceRequired: 4,
+    salaryRange: '12-18 LPA',
+    requiredSkills: ['Node.js', 'PostgreSQL', 'Docker'],
+    isActive: true,
+    applicants: 21,
+    postedDate: '2026-03-18',
+    description: 'Build and maintain scalable backend services.',
+    coverLetterRequired: false,
+  },
+  {
+    id: '2',
+    title: 'Product Designer',
+    location: 'Bangalore, India',
+    jobType: 'Full-Time',
+    experienceRequired: 3,
+    salaryRange: '10-15 LPA',
+    requiredSkills: ['Figma', 'User Research', 'Prototyping'],
+    isActive: true,
+    applicants: 14,
+    postedDate: '2026-03-20',
+    description: 'Own end-to-end product design for our web platform.',
+    coverLetterRequired: true,
+  },
+  {
+    id: '3',
+    title: 'DevOps Engineer',
+    location: 'Remote',
+    jobType: 'Remote',
+    experienceRequired: 3,
+    salaryRange: '14-20 LPA',
+    requiredSkills: ['AWS', 'Kubernetes', 'CI/CD', 'Terraform'],
+    isActive: false,
+    applicants: 9,
+    postedDate: '2026-03-22',
+    description: 'Manage cloud infrastructure and deployment pipelines.',
+    coverLetterRequired: false,
+  },
+  {
+    id: '4',
+    title: 'Data Analyst',
+    location: 'Mumbai, India',
+    jobType: 'Contract',
+    experienceRequired: 2,
+    salaryRange: '6-10 LPA',
+    requiredSkills: ['Python', 'SQL', 'Tableau', 'Excel'],
+    isActive: true,
+    applicants: 17,
+    postedDate: '2026-03-25',
+    description: 'Analyse recruitment data and produce hiring reports.',
+    coverLetterRequired: false,
+  },
+  {
+    id: '5',
+    title: 'Frontend Developer',
+    location: 'Hyderabad, India',
+    jobType: 'Full-Time',
+    experienceRequired: 2,
+    salaryRange: '8-12 LPA',
+    requiredSkills: ['React', 'TypeScript', 'Tailwind CSS'],
+    isActive: true,
+    applicants: 31,
+    postedDate: '2026-03-28',
+    description: 'Build responsive, pixel-perfect UIs using React.',
+    coverLetterRequired: true,
+  },
 ]
+// ─────────────────────────────────────────────────────────────────
 
-const statusColor = { active: 'success', paused: 'warning', closed: 'error' }
+/**
+ * ManageJobs
+ * HR page for creating, editing, toggling, and deleting job listings.
+ * Manages all local jobs state and orchestrates sub-components.
+ */
+export function ManageJobs() {
+  const navigate = useNavigate()
 
-function ManageJobs() {
-  const [jobs, setJobs]           = useState(initialJobs)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [form] = Form.useForm()
+  const [jobs, setJobs] = useState(INITIAL_JOBS)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [editingJob, setEditingJob] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
-  const handleCreate = (values) => {
-    const newJob = {
-      id: Date.now(),
-      applicants: 0,
-      posted: new Date().toISOString().split('T')[0],
-      status: 'active',
-      ...values,
+  // ── Handlers ──────────────────────────────────────────────────────
+  const handleEdit = (job) => {
+    setEditingJob(job)
+    setDrawerOpen(true)
+  }
+
+  const handleDelete = (job) => {
+    setDeleteTarget(job)
+    setConfirmOpen(true)
+  }
+
+  const handleToggleActive = (jobId) => {
+    setJobs((prev) =>
+      prev.map((j) => (j.id === jobId ? { ...j, isActive: !j.isActive } : j))
+    )
+  }
+
+  const handleSave = (values) => {
+    if (editingJob) {
+      setJobs((prev) =>
+        prev.map((j) => (j.id === editingJob.id ? { ...j, ...values } : j))
+      )
+    } else {
+      const newJob = {
+        ...values,
+        id: String(Date.now()),
+        applicants: 0,
+        postedDate: new Date().toISOString().split('T')[0],
+        isActive: true,
+      }
+      setJobs((prev) => [newJob, ...prev])
     }
-    setJobs((prev) => [newJob, ...prev])
-    setModalOpen(false)
-    form.resetFields()
   }
 
-  const handleDelete = (id) => {
-    Modal.confirm({
-      title: 'Delete this job?',
-      content: 'This action cannot be undone.',
-      okType: 'danger',
-      onOk: () => setJobs((prev) => prev.filter((j) => j.id !== id)),
-    })
+  const handleConfirmDelete = () => {
+    setJobs((prev) => prev.filter((j) => j.id !== deleteTarget?.id))
+    setConfirmOpen(false)
+    setDeleteTarget(null)
   }
 
-  const columns = [
-    {
-      title: 'Job Title',
-      dataIndex: 'title',
-      key: 'title',
-      render: (text, record) => (
-        <div>
-          <Text strong>{text}</Text>
-          <br />
-          <Text type="secondary" style={{ fontSize: 13 }}>{record.department}</Text>
-        </div>
-      ),
-    },
-    { title: 'Location',   dataIndex: 'location',   key: 'location' },
-    { title: 'Type',       dataIndex: 'type',        key: 'type',        render: (t) => <Tag>{t}</Tag> },
-    { title: 'Applicants', dataIndex: 'applicants',  key: 'applicants' },
-    { title: 'Posted',     dataIndex: 'posted',      key: 'posted' },
-    {
-      title: 'Status', dataIndex: 'status', key: 'status',
-      render: (s) => <Tag color={statusColor[s]}>{s}</Tag>,
-    },
-    {
-      title: 'Actions', key: 'actions',
-      render: (_, record) => (
-        <Space>
-          <Button type="text" icon={<EyeOutlined />}    size="small" />
-          <Button type="text" icon={<EditOutlined />}   size="small" />
-          <Button
-            type="text"
-            icon={<DeleteOutlined />}
-            size="small"
-            danger
-            onClick={() => handleDelete(record.id)}
-          />
-        </Space>
-      ),
-    },
-  ]
+  const handleCancelDelete = () => {
+    setConfirmOpen(false)
+    setDeleteTarget(null)
+  }
+
+  // ── Render ────────────────────────────────────────────────────────
+  const headerActions = (
+    <Button
+      type="primary"
+      icon={<PlusOutlined />}
+      onClick={() => { setEditingJob(null); setDrawerOpen(true) }}
+    >
+      Post New Job
+    </Button>
+  )
 
   return (
     <div className="fade-in-up">
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 20,
-        }}
-      >
-        <div>
-          <Title level={3} style={{ margin: 0 }}>Manage Jobs</Title>
-          <Text type="secondary">{jobs.length} job postings</Text>
-        </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
-          Post a Job
-        </Button>
-      </div>
 
-      <Table dataSource={jobs} columns={columns} rowKey="id" className="card-shadow" />
+      <PageHeader
+        title="Manage Jobs"
+        subtitle="Post and manage your job listings"
+        actions={headerActions}
+      />
 
-      {/* Create Job Modal */}
-      <Modal
-        title="Post a New Job"
-        open={modalOpen}
-        onCancel={() => setModalOpen(false)}
-        onOk={() => form.submit()}
-        okText="Post Job"
-        width={560}
-      >
-        <Form form={form} layout="vertical" onFinish={handleCreate} style={{ marginTop: 16 }}>
-          <Form.Item name="title" label="Job Title" rules={[{ required: true }]}>
-            <Input placeholder="e.g. Senior React Developer" />
-          </Form.Item>
-          <Form.Item name="department" label="Department" rules={[{ required: true }]}>
-            <Input placeholder="e.g. Engineering" />
-          </Form.Item>
-          <Row gutter={12}>
-            <Col span={12}>
-              <Form.Item name="location" label="Location" rules={[{ required: true }]}>
-                <Input placeholder="e.g. Remote" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="type" label="Employment Type" rules={[{ required: true }]}>
-                <Select placeholder="Select type">
-                  <Option value="Full-time">Full-time</Option>
-                  <Option value="Part-time">Part-time</Option>
-                  <Option value="Contract">Contract</Option>
-                  <Option value="Internship">Internship</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-          <Form.Item name="description" label="Job Description">
-            <TextArea rows={4} placeholder="Describe responsibilities and requirements..." />
-          </Form.Item>
-        </Form>
-      </Modal>
+      <JobsTable
+        jobs={jobs}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onToggleActive={handleToggleActive}
+      />
+
+      <JobForm
+        open={drawerOpen}
+        job={editingJob}
+        onClose={() => setDrawerOpen(false)}
+        onSave={handleSave}
+      />
+
+      <ConfirmModal
+        open={confirmOpen}
+        title="Delete Job"
+        description="This will permanently delete the job and cannot be undone."
+        danger
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
+
     </div>
   )
 }

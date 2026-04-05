@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { Layout, Menu, Avatar, Dropdown, Button, Typography } from 'antd'
+import { Layout, Menu, Avatar, Dropdown, Button, Typography, theme } from 'antd'
 import {
   DashboardOutlined,
-  FileTextOutlined,
-  SearchOutlined,
   TeamOutlined,
   SolutionOutlined,
+  FileTextOutlined,
   LogoutOutlined,
   UserOutlined,
   MenuFoldOutlined,
@@ -18,51 +17,46 @@ import useAuth from '../hooks/useAuth'
 const { Header, Sider, Content } = Layout
 const { Text } = Typography
 
-// ── Menu configs per role ─────────────────────────────────────────
-const candidateMenuItems = [
-  { key: '/candidate',              icon: <DashboardOutlined />, label: 'Dashboard' },
-  { key: '/jobs',                   icon: <SearchOutlined />,    label: 'Browse Jobs' },
-  { key: '/candidate/applications', icon: <FileTextOutlined />,  label: 'My Applications' },
-]
-
-const hrMenuItems = [
-  { key: '/hr',              icon: <DashboardOutlined />, label: 'Dashboard' },
-  { key: '/hr/jobs',         icon: <SolutionOutlined />,  label: 'Manage Jobs' },
-  { key: '/hr/applications', icon: <TeamOutlined />,      label: 'Applications' },
+// ── Admin sidebar menu ────────────────────────────────────────────
+const adminMenuItems = [
+  { key: '/admin',              icon: <DashboardOutlined />, label: 'Dashboard' },
+  { key: '/admin/users',        icon: <TeamOutlined />,      label: 'Users' },
+  { key: '/admin/jobs',         icon: <SolutionOutlined />,  label: 'Jobs' },
+  { key: '/admin/applications', icon: <FileTextOutlined />,  label: 'Applications' },
 ]
 
 /**
- * MainLayout
- * Ant Design sidebar + header shell for authenticated pages.
- * Supports role-based menu rendering.
+ * AdminLayout
+ * Ant Design Sider + Header shell for admin-role pages.
+ * Provides dark sidebar, collapse toggle, bell notification icon,
+ * and a user avatar dropdown with profile and logout actions.
  */
-function MainLayout({ role }) {
+export function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const navigate  = useNavigate()
   const location  = useLocation()
   const { user, logout } = useAuth()
-
-  const menuItems = role === 'hr' ? hrMenuItems : candidateMenuItems
+  const { token } = theme.useToken()
 
   const userMenuItems = [
     {
-      key:   'profile',
-      icon:  <UserOutlined />,
+      key: 'profile',
+      icon: <UserOutlined />,
       label: 'Profile',
-      ...(role === 'hr' ? { onClick: () => navigate('/hr/profile') } : {}),
     },
     { type: 'divider' },
     {
-      key:     'logout',
-      icon:    <LogoutOutlined />,
-      label:   'Logout',
-      danger:  true,
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: 'Logout',
+      danger: true,
       onClick: logout,
     },
   ]
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
+
       {/* ── Sidebar ── */}
       <Sider
         className="main-sidebar"
@@ -71,17 +65,18 @@ function MainLayout({ role }) {
         onCollapse={setCollapsed}
         width={220}
         trigger={null}
+        theme="dark"
       >
         <div className="sidebar-logo">
-          {!collapsed && <h2>🚀 HireBase</h2>}
-          {collapsed && <h2>🚀</h2>}
+          {!collapsed && <h2>⚙️ HireBase Admin</h2>}
+          {collapsed  && <h2>⚙️</h2>}
         </div>
 
         <Menu
           mode="inline"
           theme="dark"
           selectedKeys={[location.pathname]}
-          items={menuItems}
+          items={adminMenuItems}
           onClick={({ key }) => navigate(key)}
           style={{ borderRight: 0, marginTop: 8 }}
         />
@@ -99,17 +94,16 @@ function MainLayout({ role }) {
 
           <div className="header-actions">
             <Button type="text" icon={<BellOutlined style={{ fontSize: 18 }} />} />
+
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
-              <div
-                style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
-              >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                 <Avatar
-                  style={{ backgroundColor: '#1890ff' }}
+                  style={{ backgroundColor: token.colorPrimary }}
                   icon={<UserOutlined />}
                   size="small"
                 />
                 <Text strong style={{ fontSize: 14 }}>
-                  {user?.name || 'User'}
+                  {user?.name || 'Admin'}
                 </Text>
               </div>
             </Dropdown>
@@ -121,8 +115,7 @@ function MainLayout({ role }) {
           <Outlet />
         </Content>
       </Layout>
+
     </Layout>
   )
 }
-
-export default MainLayout

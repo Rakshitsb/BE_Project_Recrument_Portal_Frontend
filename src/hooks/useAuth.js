@@ -7,7 +7,6 @@ import authService from '../services/authService'
 // ── Mock users for demo (no backend needed) ───────────────────────
 const MOCK_USERS = {
   'candidate@demo.com': {
-    // profileCompleted: false → ProfileSetupGuard will redirect to /profile-setup
     user:  { id: 1, name: 'Alice Johnson', email: 'candidate@demo.com', role: 'candidate', profileCompleted: false },
     token: 'mock-candidate-jwt-token',
   },
@@ -15,9 +14,16 @@ const MOCK_USERS = {
     user:  { id: 2, name: 'Bob Smith', email: 'hr@demo.com', role: 'hr', profileCompleted: true },
     token: 'mock-hr-jwt-token',
   },
+  'admin@demo.com': {
+    user:  { id: 3, name: 'Admin User', email: 'admin@demo.com', role: 'admin', profileCompleted: true },
+    token: 'mock-admin-jwt-token',
+  },
 }
 
 const MOCK_PASSWORD = 'demo1234'
+
+/** Maps a user role to its home route after login / register. */
+const ROLE_HOME = { candidate: '/candidate', hr: '/hr', admin: '/admin' }
 
 /**
  * Custom hook encapsulating login / logout / register logic.
@@ -44,7 +50,7 @@ function useAuth() {
           await new Promise((r) => setTimeout(r, 600))
           storeLogin(mockEntry.user, mockEntry.token)
           message.success(`Welcome back, ${mockEntry.user.name}! 👋`)
-          navigate(mockEntry.user.role === 'hr' ? '/hr' : '/candidate', { replace: true })
+          navigate(ROLE_HOME[mockEntry.user.role] ?? '/candidate', { replace: true })
           return
         }
 
@@ -52,7 +58,7 @@ function useAuth() {
         const data = await authService.login(credentials)
         storeLogin(data.user, data.token)
         message.success(`Welcome back, ${data.user.name}!`)
-        navigate(data.user.role === 'hr' ? '/hr' : '/candidate', { replace: true })
+        navigate(ROLE_HOME[data.user.role] ?? '/candidate', { replace: true })
       } catch (err) {
         const msg = err.response?.data?.message || 'Invalid email or password.'
         message.error(msg)
@@ -70,7 +76,7 @@ function useAuth() {
         const data = await authService.register(payload)
         storeLogin(data.user, data.token)
         message.success('Account created successfully!')
-        navigate(data.user.role === 'hr' ? '/hr' : '/candidate', { replace: true })
+        navigate(ROLE_HOME[data.user.role] ?? '/candidate', { replace: true })
       } catch (err) {
         const msg = err.response?.data?.message || 'Registration failed.'
         message.error(msg)
