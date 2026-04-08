@@ -13,12 +13,13 @@ const JOB_TYPE_OPTIONS = ['Full-Time', 'Part-Time', 'Contract', 'Remote']
  * Switches between "Post New Job" and "Edit Job" mode based on the `job` prop.
  *
  * @param {object}        props
- * @param {boolean}       props.open    - Controls drawer visibility
- * @param {object|null}   props.job     - Null for create mode; job object for edit mode
- * @param {Function}      props.onClose - Called when the drawer should close
- * @param {Function}      props.onSave  - Called with form values on successful submit
+ * @param {boolean}       props.open          - Controls drawer visibility
+ * @param {object|null}   props.job           - Null for create mode; job object for edit mode
+ * @param {Function}      props.onClose       - Called when the drawer should close
+ * @param {Function}      props.onSave        - Called with form values on successful submit
+ * @param {boolean}       props.actionLoading - Shows loading on Save button during API call
  */
-export function JobForm({ open, job, onClose, onSave }) {
+export function JobForm({ open, job, onClose, onSave, actionLoading = false }) {
   const [form] = Form.useForm()
 
   // ── Sync form fields when drawer opens or job changes ────────────
@@ -30,13 +31,18 @@ export function JobForm({ open, job, onClose, onSave }) {
 
   const handleFinish = (values) => {
     onSave(values)
-    onClose()
+    // Drawer is closed by the parent (handleSave) after the API call succeeds
   }
 
   const drawerFooter = (
     <Space className="flex justify-end">
-      <Button onClick={onClose}>Cancel</Button>
-      <Button type="primary" onClick={() => form.submit()}>
+      <Button onClick={onClose} disabled={actionLoading}>Cancel</Button>
+      <Button
+        type="primary"
+        loading={actionLoading}
+        disabled={actionLoading}
+        onClick={() => form.submit()}
+      >
         Save
       </Button>
     </Space>

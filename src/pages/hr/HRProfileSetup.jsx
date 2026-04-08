@@ -7,9 +7,10 @@ import {
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 
-import useAuthStore         from '../../store/authStore'
-import { PersonalInfoStep } from '../../components/hr/setup/PersonalInfoStep'
-import { CompanyInfoStep }  from '../../components/hr/setup/CompanyInfoStep'
+import useAuthStore          from '../../store/authStore'
+import { hrProfileService }  from '../../services'
+import { PersonalInfoStep }  from '../../components/hr/setup/PersonalInfoStep'
+import { CompanyInfoStep }   from '../../components/hr/setup/CompanyInfoStep'
 
 const { Title, Text } = Typography
 
@@ -36,15 +37,34 @@ export function HRProfileSetup() {
   const [formData,    setFormData]    = useState({})
   const [submitting,  setSubmitting]  = useState(false)
 
-  // ── Submit: simulate API, update store, redirect ──────────────────
-  const handleSubmit = (allData) => {
-    setSubmitting(true)
-    setTimeout(() => {
-      updateUser({ profileCompleted: true, ...allData })
+  // ── Submit: POST /hr/profile, update store, redirect ────────────────
+  const handleSubmit = async () => {
+    try {
+      setSubmitting(true)
+
+      const personalValues = await personalForm.validateFields()
+      const companyValues  = await companyForm.validateFields()
+      const payload = { ...personalValues, ...companyValues }
+
+      await hrProfileService.createProfile(payload)
+
+      updateUser({ profileCompleted: true })
       message.success('Profile created successfully!')
+      setCurrentStep(2)
+
+      setTimeout(() => navigate('/hr'), 1500)
+
+    } catch (err) {
+      if (err?.response) {
+        const detail = err.response?.data?.detail
+        const msg = typeof detail === 'string'
+          ? detail
+          : 'Failed to create profile. Please try again.'
+        message.error(msg)
+      }
+    } finally {
       setSubmitting(false)
-      navigate('/hr', { replace: true })
-    }, 1500)
+    }
   }
 
   // ── Step navigation ───────────────────────────────────────────────
@@ -57,13 +77,7 @@ export function HRProfileSetup() {
       } catch { /* Ant Design highlights invalid fields */ }
 
     } else if (currentStep === 1) {
-      try {
-        const values  = await companyForm.validateFields()
-        const allData = { ...formData, ...values }
-        setFormData(allData)
-        setCurrentStep(2)
-        handleSubmit(allData)
-      } catch { /* Ant Design highlights invalid fields */ }
+      await handleSubmit()
     }
   }
 

@@ -15,8 +15,10 @@ const { Text } = Typography
  * @param {Function} props.onEdit         - Called with the job object when Edit is clicked
  * @param {Function} props.onDelete       - Called with the job object when Delete is clicked
  * @param {Function} props.onToggleActive - Called with jobId when the active Switch changes
+ * @param {boolean}  props.loading        - Shows table loading spinner
+ * @param {boolean}  props.actionLoading  - Disables action buttons during API calls
  */
-export function JobsTable({ jobs, onEdit, onDelete, onToggleActive }) {
+export function JobsTable({ jobs, onEdit, onDelete, onToggleActive, loading = false, actionLoading = false }) {
   const columns = [
     {
       title: 'Job Title',
@@ -60,6 +62,7 @@ export function JobsTable({ jobs, onEdit, onDelete, onToggleActive }) {
         <Switch
           checked={isActive}
           size="small"
+          disabled={actionLoading}
           onChange={() => onToggleActive(record.id)}
         />
       ),
@@ -73,6 +76,7 @@ export function JobsTable({ jobs, onEdit, onDelete, onToggleActive }) {
             type="text"
             size="small"
             icon={<EditOutlined />}
+            disabled={actionLoading}
             onClick={() => onEdit(record)}
           />
           <Button
@@ -80,6 +84,7 @@ export function JobsTable({ jobs, onEdit, onDelete, onToggleActive }) {
             size="small"
             danger
             icon={<DeleteOutlined />}
+            disabled={actionLoading}
             onClick={() => onDelete(record)}
           />
         </Space>
@@ -91,7 +96,7 @@ export function JobsTable({ jobs, onEdit, onDelete, onToggleActive }) {
     <DataTable
       columns={columns}
       dataSource={jobs}
-      loading={false}
+      loading={loading}
       emptyText="No jobs posted yet. Click 'Post New Job' to get started."
     />
   )

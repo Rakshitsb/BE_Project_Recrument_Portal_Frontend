@@ -148,6 +148,68 @@ Changes made:
 - `src/pages/candidate/ProfileSetup.jsx` — already correct via `useProfileSetup`
   hook (`updateUser({ profileCompleted: true })`), no change needed
 
+---
+
+### Phase HR1 — HR Service Layer
+**Date:** 2026-04-07
+**Status:** Complete
+
+Files created:
+- `src/services/hrService.js` — HR profile, jobs, and applications API service
+  with full snake_case ↔ camelCase field mappers (`toBackendProfile`,
+  `fromBackendProfile`, `toBackendJob`, `fromBackendJob`); exports
+  `hrProfileService`, `jobService`, `applicationService`
+- `src/services/index.js` — barrel export for all services; enables clean
+  imports like `import { jobService } from '../services'`
+
+Files modified:
+- `src/hooks/useApiCall.js` — fixed error parsing to match FastAPI `detail`
+  field (handles both string and array/validation-error formats); extracted
+  `parseApiError` helper; replaced `err.response?.data?.message` with
+  `parseApiError(err)`
+
+---
+
+### Phase HR2 — HR Dashboard + Profile Wired to API
+**Date:** 2026-04-07
+**Status:** Complete
+
+Files modified:
+- `src/pages/hr/HRDashboard.jsx` — removed mock data, wired
+  `jobService.getMyJobs()`, derived stats from real jobs array,
+  added loading skeleton and error retry state
+- `src/pages/hr/HRProfile.jsx` — removed mock profile, wired
+  `hrProfileService.getProfile()` on mount and
+  `hrProfileService.updateProfile()` on save,
+  added loading and error states
+- `src/pages/hr/HRProfileSetup.jsx` — replaced `setTimeout` mock
+  with real `hrProfileService.createProfile()` API call,
+  wired `updateUser({ profileCompleted: true })` on success
+
+---
+
+### Phase HR3 — Manage Jobs Wired to API
+**Date:** 2026-04-08
+**Status:** Complete
+
+Files created:
+- `src/hooks/useManageJobs.js` — custom hook encapsulating all jobs
+  state and API logic (fetch, create, update, optimistic toggle,
+  optimistic delete); extracted to keep ManageJobs.jsx under 100 lines
+
+Files modified:
+- `src/pages/hr/ManageJobs.jsx` — removed mock data, wired
+  `jobService.getMyJobs()` on mount, `jobService.createJob()`
+  and `jobService.updateJob()` in `handleSave`,
+  direct `api.put()` for toggle (`is_active` field),
+  `jobService.deleteJob()` with optimistic delete,
+  added loading skeleton and error retry state
+- `src/components/hr/JobsTable.jsx` — added `actionLoading`
+  and `loading` props, disabled action buttons during operations
+- `src/components/hr/JobForm.jsx` — added `actionLoading` prop,
+  Save button shows loading during API call; fixed premature
+  `onClose()` so drawer stays open while request is in-flight
+
 ## API Integration
 
 All mock data is clearly marked with:

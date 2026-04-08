@@ -1,64 +1,71 @@
-import { useRef, useState } from 'react'
-import { Button, Space, message } from 'antd'
+import { useRef, useState, useEffect } from 'react'
+import { Button, Space, Skeleton, Result, App } from 'antd'
 import { EditOutlined, SaveOutlined } from '@ant-design/icons'
 
 import { PageHeader }        from '../../components/ui'
 import { HRProfileCard }     from '../../components/hr/HRProfileCard'
 import { HRProfileEditForm } from '../../components/hr/HRProfileEditForm'
-
-// ── Mock Data (replace with API calls later) ──────────────────────────────
-const MOCK_PROFILE = {
-  name:            'Rohan Mehta',
-  email:           'rohan@techcorp.com',
-  phone:           '+91 98765 43210',
-  designation:     'Senior HR Manager',
-  company:         'TechCorp India',
-  companyLocation: 'Pune, Maharashtra',
-  industry:        'IT & Software',
-  companySize:     '201-500',
-  companyWebsite:  'https://techcorp.in',
-  joinedDate:      'January 2024',
-}
-
-// ── Component ─────────────────────────────────────────────────────────────
+import useApiCall            from '../../hooks/useApiCall'
+import { hrProfileService }  from '../../services'
 
 /**
  * HRProfile
  * Shows the HR user's profile in read-only or editable mode.
- * The parent-controlled "Save Changes" button triggers the form via a ref.
+ * Fetches profile from GET /hr/profile on mount.
+ * Saves changes via PUT /hr/profile.
  */
 export function HRProfile() {
-  const [editMode, setEditMode] = useState(false)
-  const [profile,  setProfile]  = useState(MOCK_PROFILE)
+  const { message } = App.useApp()
   const formRef = useRef(null)
 
-  // ── Handlers ─────────────────────────────────────────────────────
-  function handleSave(values) {
-    setProfile((prev) => ({ ...prev, ...values }))
-    setEditMode(false)
-    message.success('Profile updated successfully!')
+  const [editMode, setEditMode] = useState(false)
+  const [profile,  setProfile]  = useState(null)
+
+  // ── API hooks ──────────────────────────────────────────────────
+  const { execute: fetchProfile, loading: fetchLoading, error, data } =
+    useApiCall(hrProfileService.getProfile)
+
+  const { execute: saveProfile, loading: saveLoading } =
+    useApiCall(hrProfileService.updateProfile)
+
+  // ── Fetch on mount ─────────────────────────────────────────────
+  useEffect(() => { fetchProfile() }, [])
+
+  // ── Sync API data into local state ─────────────────────────────
+  useEffect(() => {
+    if (data) setProfile(data)
+  }, [data])
+
+  // ── Handlers ──────────────────────────────────────────────────
+  const handleSave = async (values) => {
+    try {
+      await saveProfile(values)
+      setProfile((prev) => ({ ...prev, ...values }))
+      setEditMode(false)
+      message.success('Profile updated successfully!')
+    } catch {
+      // error already shown by useApiCall
+    }
   }
 
-  function handleCancel() {
-    setEditMode(false)
-  }
+  const handleCancel = () => setEditMode(false)
 
-  // ── Header actions ────────────────────────────────────────────────
+  // ── Header actions ─────────────────────────────────────────────
   const viewActions = (
-    <Button
-      icon={<EditOutlined />}
-      onClick={() => setEditMode(true)}
-    >
+    <Button icon={<EditOutlined />} onClick={() => setEditMode(true)}>
       Edit Profile
     </Button>
   )
 
   const editActions = (
     <Space>
-      <Button onClick={handleCancel}>Cancel</Button>
+      <Button onClick={handleCancel} disabled={saveLoading}>
+        Cancel
+      </Button>
       <Button
         type="primary"
         icon={<SaveOutlined />}
+        loading={saveLoading}
         onClick={() => formRef.current?.submit()}
       >
         Save Changes
@@ -66,7 +73,32 @@ export function HRProfile() {
     </Space>
   )
 
-  // ── Render ────────────────────────────────────────────────────────
+  // ── Loading state ──────────────────────────────────────────────
+  if (fetchLoading && !profile) {
+    return (
+      <div>
+        <PageHeader
+          title="My Profile"
+          subtitle="Manage your personal and company information"
+        />
+        <Skeleton active paragraph={{ rows: 6 }} />
+      </div>
+    )
+  }
+
+  // ── Error state ────────────────────────────────────────────────
+  if (error && !profile) {
+    return (
+      <Result
+        status="error"
+        title="Failed to load profile"
+        subTitle={error}
+        extra={<Button onClick={() => fetchProfile()}>Retry</Button>}
+      />
+    )
+  }
+
+  // ── Main render ────────────────────────────────────────────────
   return (
     <div>
       <PageHeader
@@ -88,3 +120,5 @@ export function HRProfile() {
     </div>
   )
 }
+
+export default HRProfile

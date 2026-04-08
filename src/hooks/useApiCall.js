@@ -2,6 +2,26 @@ import { useState, useCallback } from 'react'
 import { App } from 'antd'
 
 /**
+ * Parses FastAPI error responses into a human-readable string.
+ * Handles string detail, array detail (validation), and network errors.
+ *
+ * @param {Error} err - Axios error object
+ * @returns {string} Human-readable error message
+ */
+const parseApiError = (err) => {
+  if (!err.response) {
+    return 'Cannot reach the server. Please check your connection.'
+  }
+  const detail = err.response?.data?.detail
+  if (!detail) return 'Something went wrong. Please try again.'
+  if (typeof detail === 'string') return detail
+  if (Array.isArray(detail)) {
+    return detail.map((d) => d.msg).join(', ')
+  }
+  return 'Something went wrong. Please try again.'
+}
+
+/**
  * Generic hook for wrapping async API calls with loading + error state.
  *
  * @param {Function} asyncFn - The async function to call
@@ -26,7 +46,7 @@ function useApiCall(asyncFn) {
         setData(result)
         return result
       } catch (err) {
-        const msg = err.response?.data?.message || err.message || 'An error occurred.'
+        const msg = parseApiError(err)
         setError(msg)
         message.error(msg)
         throw err
