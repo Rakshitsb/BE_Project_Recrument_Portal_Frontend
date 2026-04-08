@@ -219,3 +219,22 @@ All mock data is clearly marked with:
 ```
 
 Ready for Phase 2 API integration using `src/services/api.js`.
+
+### Phase HR4 — Applications Page Wired to API
+**Date:** 2026-04-09
+**Status:** Complete
+
+Files modified:
+- `src/services/hrService.js` — added fromBackendApplication mapper,
+  updated getJobApplications to use mapper with graceful
+  fallbacks for missing candidate fields
+- `src/pages/hr/Applications.jsx` — removed all mock data,
+  wired jobService.getMyJobs() for job filter dropdown,
+  wired applicationService.getJobApplications() per selected job,
+  wired applicationService.updateStatus() with optimistic update,
+  added Phase 1 info banner, added loading and error states
+- `src/components/hr/ApplicantCard.jsx` — added graceful degradation
+  for missing fields, statusUpdating loading state on status Select,
+  candidate name fallback with Tooltip
+- `src/components/hr/ApplicationFilters.jsx` — added jobsLoading
+  prop to job Select

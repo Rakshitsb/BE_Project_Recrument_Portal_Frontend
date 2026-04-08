@@ -1,6 +1,6 @@
 import api from './api'
 
-// ── Field mappers ─────────────────────────────────────────────────
+// ── Field mappers ─────────────────────────────────────────────────────────
 
 /**
  * Maps frontend camelCase HR profile form values
@@ -89,22 +89,22 @@ const fromBackendJob = (data) => ({
 const fromBackendApplication = (data) => ({
   id:              data.id,
   jobId:           data.job_id,
-  jobTitle:        data.job_title        || '—',
+  jobTitle:        data.job_title || '—',
   candidateId:     data.candidate_id,
-  candidateName:   data.candidate_name   || `Candidate ${data.candidate_id?.slice(-4) || ''}`,
-  candidateEmail:  data.candidate_email  || '—',
-  candidatePhone:  data.candidate_phone  || '—',
-  location:        data.location         || '—',
-  skills:          data.skills           || [],
+  candidateName:   data.candidate_name  || `Candidate ${data.candidate_id?.slice(-4) || ''}`,
+  candidateEmail:  data.candidate_email || '—',
+  candidatePhone:  data.candidate_phone || '—',
+  location:        data.location        || '—',
+  skills:          data.skills          || [],
   experienceYears: data.experience_years ?? '—',
-  education:       data.education        || '—',
-  coverLetter:     data.cover_letter     || '',
+  education:       data.education       || '—',
+  coverLetter:     data.cover_letter    || '',
   status:          data.status,
   appliedDate:     data.created_at?.split('T')[0] || '—',
   updatedAt:       data.updated_at?.split('T')[0] || '—',
 })
 
-// ── HR Profile Service ────────────────────────────────────────────
+// ── HR Profile Service ───────────────────────────────────────────
 
 const hrProfileService = {
 
@@ -142,7 +142,7 @@ const hrProfileService = {
 
 }
 
-// ── Jobs Service ──────────────────────────────────────────────────
+// ── Jobs Service ─────────────────────────────────────────────────
 
 const jobService = {
 
@@ -202,7 +202,7 @@ const jobService = {
 
 }
 
-// ── Applications Service (HR side) ────────────────────────────────
+// ── Applications Service (HR side) ───────────────────────────────
 
 const applicationService = {
 
@@ -235,6 +235,6 @@ const applicationService = {
 
 }
 
-// ── Exports ───────────────────────────────────────────────────────
+// ── Exports ──────────────────────────────────────────────────────
 export { hrProfileService, jobService, applicationService }
 export default { hrProfileService, jobService, applicationService }

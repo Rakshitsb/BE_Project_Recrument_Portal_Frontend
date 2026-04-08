@@ -1,25 +1,25 @@
-import { Row, Col, Select } from 'antd'
+import { Col, Row, Select } from 'antd'
 
 const STATUS_OPTIONS = [
-  { value: 'applied',      label: 'Applied' },
+  { value: 'applied', label: 'Applied' },
   { value: 'under_review', label: 'Under Review' },
-  { value: 'shortlisted',  label: 'Shortlisted' },
-  { value: 'interview',    label: 'Interview' },
-  { value: 'selected',     label: 'Selected' },
-  { value: 'rejected',     label: 'Rejected' },
+  { value: 'shortlisted', label: 'Shortlisted' },
+  { value: 'interview', label: 'Interview' },
+  { value: 'selected', label: 'Selected' },
+  { value: 'rejected', label: 'Rejected' },
 ]
 
 /**
  * ApplicationFilters
  * Provides job and status filter dropdowns for the Applications page.
- * Pure display component — all state lives in the parent.
  *
- * @param {object}        props
- * @param {Array}         props.jobs             - Array of { id, title } for the job dropdown
- * @param {string|null}   props.selectedJobId    - Currently selected job filter value
- * @param {string|null}   props.selectedStatus   - Currently selected status filter value
- * @param {Function}      props.onJobChange      - Called with job id or undefined on clear
- * @param {Function}      props.onStatusChange   - Called with status string or undefined on clear
+ * @param {object} props
+ * @param {Array} props.jobs
+ * @param {string|null} props.selectedJobId
+ * @param {string|null} props.selectedStatus
+ * @param {Function} props.onJobChange
+ * @param {Function} props.onStatusChange
+ * @param {boolean} [props.jobsLoading=false]
  */
 export function ApplicationFilters({
   jobs,
@@ -27,17 +27,20 @@ export function ApplicationFilters({
   selectedStatus,
   onJobChange,
   onStatusChange,
+  jobsLoading = false,
 }) {
   return (
-    <Row gutter={12} wrap style={{ marginBottom: 16 }}>
+    <Row gutter={12} wrap className="mb-4">
       <Col>
         <Select
           placeholder="Filter by Job"
           allowClear
-          value={selectedJobId ?? undefined}
+          loading={jobsLoading}
+          disabled={jobsLoading}
           style={{ width: 220 }}
-          onChange={(val) => onJobChange(val ?? null)}
-          options={jobs.map((j) => ({ value: j.id, label: j.title }))}
+          value={selectedJobId ?? undefined}
+          onChange={onJobChange}
+          options={jobs.map((job) => ({ value: job.id, label: job.title }))}
         />
       </Col>
 
@@ -47,7 +50,7 @@ export function ApplicationFilters({
           allowClear
           value={selectedStatus ?? undefined}
           style={{ width: 200 }}
-          onChange={(val) => onStatusChange(val ?? null)}
+          onChange={(value) => onStatusChange(value ?? null)}
           options={STATUS_OPTIONS}
         />
       </Col>

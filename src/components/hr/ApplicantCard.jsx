@@ -3,74 +3,63 @@ import { UserOutlined } from '@ant-design/icons'
 
 import { StatusBadge } from '../ui/StatusBadge'
 
-const { Title, Text, Paragraph } = Typography
+const { Paragraph, Text, Title } = Typography
 
 const STATUS_OPTIONS = [
-  { value: 'applied',      label: 'Applied' },
+  { value: 'applied', label: 'Applied' },
   { value: 'under_review', label: 'Under Review' },
-  { value: 'shortlisted',  label: 'Shortlisted' },
-  { value: 'interview',    label: 'Interview' },
-  { value: 'selected',     label: 'Selected' },
-  { value: 'rejected',     label: 'Rejected' },
+  { value: 'shortlisted', label: 'Shortlisted' },
+  { value: 'interview', label: 'Interview' },
+  { value: 'selected', label: 'Selected' },
+  { value: 'rejected', label: 'Rejected' },
 ]
 
-/** Renders muted italic fallback for missing/placeholder fields. */
 const NA = () => <Text type="secondary" italic>Not available</Text>
 
-/** Returns true when a field value is a placeholder or empty. */
-const isMissing = (val) => !val || val === '—'
+const isMissing = (value) => !value || value === '—'
 
 /**
  * ApplicantCard
- * Detailed profile card for a single applicant.
- * Degrades gracefully when candidate detail fields are missing (Phase 1).
+ * Detailed profile card for a single applicant with Phase 1 fallback handling.
  *
- * @param {object}   props
- * @param {object}   props.applicant       - The applicant data object
- * @param {Function} props.onStatusChange  - Called with (appId, newStatus) on update
- * @param {boolean}  props.statusUpdating  - Disables status Select during API call
+ * @param {object} props
+ * @param {object} props.applicant
+ * @param {Function} props.onStatusChange
+ * @param {boolean} [props.statusUpdating=false]
  */
 export function ApplicantCard({ applicant, onStatusChange, statusUpdating = false }) {
   const isFallbackName = applicant.candidateName?.startsWith('Candidate ')
+  const showExperienceFallback = applicant.experienceYears === '—' || applicant.experienceYears === ''
 
   return (
     <Card>
-
-      {/* ── Section 1: Header ── */}
-      <div className="flex flex-col items-center" style={{ textAlign: 'center', marginBottom: 4 }}>
+      <div className="mb-1 flex flex-col items-center text-center">
         {isFallbackName ? (
           <Tooltip title="Full candidate profile not yet available">
-            <Avatar size="large" style={{ backgroundColor: '#8c8c8c', marginBottom: 10 }}>?</Avatar>
+            <Avatar size="large" className="mb-2.5 bg-neutral-500">?</Avatar>
           </Tooltip>
         ) : (
-          <Avatar
-            size="large"
-            icon={<UserOutlined />}
-            style={{ backgroundColor: '#1677ff', marginBottom: 10 }}
-          />
+          <Avatar size="large" icon={<UserOutlined />} className="mb-2.5 bg-blue-600" />
         )}
 
-        <Title level={5} style={{ margin: 0 }}>{applicant.candidateName}</Title>
-
-        <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
+        <Title level={5} className="!m-0">{applicant.candidateName}</Title>
+        <Text type="secondary" className="block text-xs">
           {isMissing(applicant.candidateEmail) ? <NA /> : applicant.candidateEmail}
         </Text>
-
-        <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
+        <Text type="secondary" className="block text-xs">
           {isMissing(applicant.candidatePhone) ? <NA /> : applicant.candidatePhone}
         </Text>
       </div>
 
-      <Divider style={{ margin: '12px 0' }} />
+      <Divider className="!my-3" />
 
-      {/* ── Section 2: Details ── */}
       <Descriptions column={1} size="small">
         <Descriptions.Item label="Job Applied">{applicant.jobTitle}</Descriptions.Item>
         <Descriptions.Item label="Location">
           {isMissing(applicant.location) ? <NA /> : applicant.location}
         </Descriptions.Item>
         <Descriptions.Item label="Experience">
-          {applicant.experienceYears === '—' ? <NA /> : `${applicant.experienceYears} years`}
+          {showExperienceFallback ? <NA /> : `${applicant.experienceYears} years`}
         </Descriptions.Item>
         <Descriptions.Item label="Education">
           {isMissing(applicant.education) ? <NA /> : applicant.education}
@@ -78,52 +67,44 @@ export function ApplicantCard({ applicant, onStatusChange, statusUpdating = fals
         <Descriptions.Item label="Applied On">{applicant.appliedDate}</Descriptions.Item>
       </Descriptions>
 
-      <Divider style={{ margin: '12px 0' }} />
+      <Divider className="!my-3" />
 
-      {/* ── Section 3: Skills ── */}
       <Text strong>Skills</Text>
-      <div className="flex flex-wrap" style={{ gap: 4, marginTop: 6 }}>
+      <div className="mt-1.5 flex flex-wrap gap-1">
         {applicant.skills?.length
           ? applicant.skills.map((skill) => <Tag key={skill} color="blue">{skill}</Tag>)
-          : <Text type="secondary" italic>No skills listed</Text>
-        }
+          : <Text type="secondary" italic>No skills listed</Text>}
       </div>
 
-      <Divider style={{ margin: '12px 0' }} />
+      <Divider className="!my-3" />
 
-      {/* ── Section 4: Cover Letter ── */}
       <Text strong>Cover Letter</Text>
       {applicant.coverLetter ? (
-        <Paragraph
-          ellipsis={{ rows: 3, expandable: true }}
-          style={{ marginTop: 6, marginBottom: 0 }}
-        >
+        <Paragraph ellipsis={{ rows: 3, expandable: true }} className="!mb-0 !mt-1.5">
           {applicant.coverLetter}
         </Paragraph>
       ) : (
-        <Text type="secondary" italic style={{ display: 'block', marginTop: 6 }}>
+        <Text type="secondary" italic className="mt-1.5 block">
           No cover letter provided
         </Text>
       )}
 
-      <Divider style={{ margin: '12px 0' }} />
+      <Divider className="!my-3" />
 
-      {/* ── Section 5: Status Update ── */}
       <Text strong>Update Status</Text>
       <Select
         value={applicant.status}
         loading={statusUpdating}
         disabled={statusUpdating}
-        onChange={(val) => onStatusChange(applicant.id, val)}
-        style={{ width: '100%', marginTop: 6 }}
+        onChange={(value) => onStatusChange(applicant.id, value)}
+        className="mt-1.5 w-full"
       >
-        {STATUS_OPTIONS.map((opt) => (
-          <Select.Option key={opt.value} value={opt.value}>
-            <StatusBadge status={opt.value} />
+        {STATUS_OPTIONS.map((option) => (
+          <Select.Option key={option.value} value={option.value}>
+            <StatusBadge status={option.value} />
           </Select.Option>
         ))}
       </Select>
-
     </Card>
   )
 }

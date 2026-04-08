@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { App } from 'antd'
 
 import useApiCall                         from './useApiCall'
@@ -23,8 +23,11 @@ export function useApplications() {
   const [drawerOpen,     setDrawerOpen]     = useState(false)
   const [statusUpdating, setStatusUpdating] = useState(false)
 
-  // ── API hooks ─────────────────────────────────────────────────────
-  const { execute: fetchJobs, loading: jobsLoading } =
+  const {
+    execute: fetchJobs,
+    loading: jobsLoading,
+    error: jobsError,
+  } =
     useApiCall(jobService.getMyJobs)
 
   const {
@@ -35,38 +38,63 @@ export function useApplications() {
 
   const { execute: updateAppStatus } = useApiCall(applicationService.updateStatus)
 
-  // ── Initial fetch: HR's own jobs for the filter dropdown ──────────
-  useEffect(() => {
-    fetchJobs().then((result) => { if (result) setJobs(result) })
-  }, [])
+  const loadJobs = useCallback(async () => {
+    try {
+      const result = await fetchJobs()
+      if (result) setJobs(result)
+      return result
+    } catch {
+      return null
+    }
+  }, [fetchJobs])
 
-  // ── Fetch applications when selected job changes ──────────────────
-  useEffect(() => {
-    if (!selectedJobId) { setApplications([]); return }
-    fetchApplications(selectedJobId).then((r) => { if (r) setApplications(r) })
-  }, [selectedJobId])
+  const loadApplications = useCallback(
+    async (jobId) => {
+      if (!jobId) {
+        setApplications([])
+        return null
+      }
+      try {
+        const result = await fetchApplications(jobId)
+        if (result) setApplications(result)
+        return result
+      } catch {
+        return null
+      }
+    },
+    [fetchApplications],
+  )
 
-  // ── Derived: client-side status filter ───────────────────────────
-  const filteredApps = useMemo(() =>
-    applications.filter((app) => !selectedStatus || app.status === selectedStatus),
+  useEffect(() => {
+    loadJobs()
+  }, [loadJobs])
+
+  useEffect(() => {
+    loadApplications(selectedJobId)
+  }, [loadApplications, selectedJobId])
+
+  const filteredApps = useMemo(
+    () => applications.filter((app) => !selectedStatus || app.status === selectedStatus),
     [applications, selectedStatus],
   )
 
-  // ── Handlers ─────────────────────────────────────────────────────
   const handleJobChange = (jobId) => {
     setSelectedJobId(jobId)
     setSelectedApp(null)
     setApplications([])
   }
 
-  const handleView = (app) => { setSelectedApp(app); setDrawerOpen(true) }
+  const handleView = (app) => {
+    setSelectedApp(app)
+    setDrawerOpen(true)
+  }
 
   const handleStatusChange = async (appId, newStatus) => {
     const snapshot = [...applications]
+    const previousStatus = snapshot.find((app) => app.id === appId)?.status
 
-    // Optimistic update
     setApplications((prev) =>
-      prev.map((a) => (a.id === appId ? { ...a, status: newStatus } : a))
+      prev.map((app) => (app.id === appId ? { ...app, status: newStatus } : app))
     )
     setSelectedApp((prev) =>
       prev?.id === appId ? { ...prev, status: newStatus } : prev
@@ -77,12 +105,9 @@ export function useApplications() {
       await updateAppStatus(appId, newStatus)
       message.success('Application status updated.')
     } catch {
-      // Revert on failure
       setApplications(snapshot)
       setSelectedApp((prev) =>
-        prev?.id === appId
-          ? { ...prev, status: snapshot.find((a) => a.id === appId)?.status }
-          : prev
+        prev?.id === appId ? { ...prev, status: previousStatus } : prev
       )
     } finally {
       setStatusUpdating(false)
@@ -90,12 +115,24 @@ export function useApplications() {
   }
 
   return {
-    jobs, applications, filteredApps, setApplications,
-    jobsLoading, appsLoading, appsError, statusUpdating,
-    selectedJobId, selectedStatus, selectedApp, drawerOpen,
-    setSelectedStatus, setDrawerOpen,
-    handleJobChange, handleView, handleStatusChange,
-    fetchApplications,
+    jobs,
+    filteredApps,
+    jobsLoading,
+    jobsError,
+    appsLoading,
+    appsError,
+    statusUpdating,
+    selectedJobId,
+    selectedStatus,
+    selectedApp,
+    drawerOpen,
+    setSelectedStatus,
+    setDrawerOpen,
+    handleJobChange,
+    handleView,
+    handleStatusChange,
+    loadJobs,
+    loadApplications,
   }
 }
 

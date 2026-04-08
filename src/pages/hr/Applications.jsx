@@ -1,46 +1,50 @@
-import { Row, Col, Button, Tag, Drawer, Skeleton, Result, Alert } from 'antd'
-import { UserOutlined, SolutionOutlined }                          from '@ant-design/icons'
+import { Alert, Button, Col, Drawer, Result, Row, Skeleton, Tag } from 'antd'
+import { SolutionOutlined, UserOutlined }                          from '@ant-design/icons'
 
-import { PageHeader, DataTable, StatusBadge, EmptyState } from '../../components/ui'
-import { ApplicationFilters } from '../../components/hr/ApplicationFilters'
 import { ApplicantCard }      from '../../components/hr/ApplicantCard'
+import { ApplicationFilters } from '../../components/hr/ApplicationFilters'
+import { DataTable, EmptyState, PageHeader, StatusBadge } from '../../components/ui'
 import { useApplications }    from '../../hooks/useApplications'
 
 /**
  * Applications
  * HR page for reviewing and managing candidate applications.
- * Fetches applications per selected job, supports status filtering,
- * and an inline profile panel with a mobile drawer fallback.
- * All state and API logic delegated to useApplications hook.
+ * Fetches applications per selected job and supports optimistic status updates.
  */
 export function Applications() {
   const {
-    jobs, filteredApps, setApplications,
-    jobsLoading, appsLoading, appsError, statusUpdating,
-    selectedJobId, selectedStatus, selectedApp, drawerOpen,
-    setSelectedStatus, setDrawerOpen,
-    handleJobChange, handleView, handleStatusChange,
-    fetchApplications,
+    jobs,
+    filteredApps,
+    jobsLoading,
+    jobsError,
+    appsLoading,
+    appsError,
+    statusUpdating,
+    selectedJobId,
+    selectedStatus,
+    selectedApp,
+    drawerOpen,
+    setSelectedStatus,
+    setDrawerOpen,
+    handleJobChange,
+    handleView,
+    handleStatusChange,
+    loadJobs,
+    loadApplications,
   } = useApplications()
 
-  // ── Table columns ─────────────────────────────────────────────────
   const columns = [
     { title: 'Candidate', dataIndex: 'candidateName', key: 'candidateName' },
-    { title: 'Job',       dataIndex: 'jobTitle',       key: 'jobTitle' },
-    { title: 'Applied',   dataIndex: 'appliedDate',    key: 'appliedDate' },
+    { title: 'Job', dataIndex: 'jobTitle', key: 'jobTitle' },
+    { title: 'Applied', dataIndex: 'appliedDate', key: 'appliedDate' },
+    { title: 'Status', dataIndex: 'status', key: 'status', render: (status) => <StatusBadge status={status} /> },
     {
-      title: 'Status', dataIndex: 'status', key: 'status',
-      render: (s) => <StatusBadge status={s} />,
-    },
-    {
-      title: 'Action', key: 'action',
-      render: (_, r) => (
-        <Button type="text" size="small" onClick={() => handleView(r)}>View</Button>
-      ),
+      title: 'Action',
+      key: 'action',
+      render: (_, record) => <Button type="text" size="small" onClick={() => handleView(record)}>View</Button>,
     },
   ]
 
-  // ── Content area (job-gated, then loading/error/table) ────────────
   const renderContent = () => {
     if (!selectedJobId) {
       return (
@@ -59,13 +63,7 @@ export function Applications() {
           status="error"
           title="Failed to load applications"
           subTitle={appsError}
-          extra={
-            <Button onClick={() =>
-              fetchApplications(selectedJobId).then((r) => r && setApplications(r))
-            }>
-              Retry
-            </Button>
-          }
+          extra={<Button onClick={() => loadApplications(selectedJobId)}>Retry</Button>}
         />
       )
     }
@@ -76,11 +74,8 @@ export function Applications() {
           <DataTable
             columns={columns}
             dataSource={filteredApps}
-            loading={appsLoading}
             emptyText="No applications match the current filters."
-            extraProps={{
-              onRow: (r) => ({ onClick: () => handleView(r), style: { cursor: 'pointer' } }),
-            }}
+            extraProps={{ onRow: (record) => ({ onClick: () => handleView(record), className: 'cursor-pointer' }) }}
           />
         </Col>
 
@@ -104,7 +99,6 @@ export function Applications() {
 
   return (
     <div className="fade-in-up">
-
       <PageHeader
         title="Applications"
         subtitle="Review and manage candidate applications"
@@ -112,13 +106,24 @@ export function Applications() {
       />
 
       <Alert
+        className="mb-4"
         type="info"
         showIcon
         closable
-        style={{ marginBottom: 16 }}
         message="Phase 1 — Limited candidate details"
         description="Full candidate profiles (name, skills, education) will be available after Phase 2 API enrichment. Application status management is fully functional."
       />
+
+      {jobsError && (
+        <Alert
+          className="mb-4"
+          type="error"
+          showIcon
+          message="Failed to load your jobs"
+          description={jobsError}
+          action={<Button size="small" onClick={loadJobs}>Retry</Button>}
+        />
+      )}
 
       <ApplicationFilters
         jobs={jobs}
@@ -147,9 +152,6 @@ export function Applications() {
           />
         )}
       </Drawer>
-
     </div>
   )
 }
-
-export default Applications

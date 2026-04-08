@@ -21,7 +21,7 @@ const MyApplications     = lazy(() => import('../pages/candidate/MyApplications'
 // HR pages
 const HRDashboard    = lazy(() => import('../pages/hr/HRDashboard'))
 const ManageJobs     = lazy(() => import('../pages/hr/ManageJobs'))
-const Applications   = lazy(() => import('../pages/hr/Applications'))
+const Applications   = lazy(() => import('../pages/hr/Applications').then(m => ({ default: m.Applications })))
 const HRProfileSetup = lazy(() => import('../pages/hr/HRProfileSetup'))
 const HRProfile      = lazy(() => import('../pages/hr/HRProfile').then(m => ({ default: m.HRProfile })))
 
