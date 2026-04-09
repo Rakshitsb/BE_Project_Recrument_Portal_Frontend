@@ -12,27 +12,37 @@ const authService = {
    * Login an existing user.
    * POST /auth/login
    * @param {{ email: string, password: string }} credentials
-   * @returns {{ access_token: string, token_type: string, role: string }}
+   * @returns {{ token: string, user: object }}
    */
   login: async (credentials) => {
     const { data } = await api.post('/auth/login', credentials)
-    return data
+    // Backend returns: access_token, token_type, role
+    return {
+      token: data.access_token,
+      user: {
+        email: credentials.email,
+        role:  data.role,
+      },
+    }
   },
 
   /**
    * Register a new user (candidate or hr only).
    * POST /auth/signup
    * @param {{ name: string, email: string, password: string, role: string }} payload
-   * @returns {{ access_token: string, token_type: string, role: string }}
-   *
-   * NOTE: Backend returns same shape as login on successful signup.
-   * If backend returns only a success message on signup (not a token),
-   * handle that in useAuth.js — not here. This function just returns
-   * whatever the backend sends.
+   * @returns {{ token: string, user: object }}
    */
   register: async (payload) => {
+    // payload: { name, email, password, role }
     const { data } = await api.post('/auth/signup', payload)
-    return data
+    return {
+      token: data.access_token,
+      user: {
+        name:  payload.name,
+        email: payload.email,
+        role:  data.role,
+      },
+    }
   },
 
 }

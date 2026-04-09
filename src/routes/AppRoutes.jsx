@@ -17,6 +17,9 @@ const ProfileSetup  = lazy(() => import('../pages/candidate/ProfileSetup'))
 const CandidateDashboard = lazy(() => import('../pages/candidate/CandidateDashboard'))
 const JobsPage           = lazy(() => import('../pages/candidate/Jobs'))
 const MyApplications     = lazy(() => import('../pages/candidate/MyApplications'))
+const JobDetailPage      = lazy(() => import('../pages/candidate/JobDetailPage'))
+const CandidateProfile   = lazy(() => import('../pages/candidate/CandidateProfile'))
+const EditProfile        = lazy(() => import('../pages/candidate/EditProfile'))
 
 // HR pages
 const HRDashboard    = lazy(() => import('../pages/hr/HRDashboard'))
@@ -52,10 +55,6 @@ function AppRoutes() {
           <Route path="/register" element={<RegisterPage />} />
         </Route>
 
-        {/* Profile Setup — authenticated, any role, no layout shell */}
-        <Route element={<ProtectedRoute allowedRoles={[]} />}>
-          <Route path="/profile-setup" element={<ProfileSetup />} />
-        </Route>
 
         {/* HR Profile Setup — hr role, no layout shell */}
         <Route element={<ProtectedRoute allowedRoles={['hr']} />}>
@@ -66,21 +65,17 @@ function AppRoutes() {
         <Route element={<ProtectedRoute allowedRoles={['candidate']} />}>
           <Route element={<ProfileSetupGuard />}>
             <Route element={<MainLayout role="candidate" />}>
-              <Route path="/candidate"              element={<CandidateDashboard />} />
-              <Route path="/candidate/jobs"         element={<JobsPage />} />
-              <Route path="/candidate/applications" element={<MyApplications />} />
+              <Route path="/candidate"                    element={<CandidateDashboard />} />
+              <Route path="/candidate/jobs"               element={<JobsPage />} />
+              <Route path="/candidate/jobs/:jobId"        element={<JobDetailPage />} />
+              <Route path="/candidate/applications"       element={<MyApplications />} />
+              <Route path="/candidate/profile"            element={<CandidateProfile />} />
+              <Route path="/candidate/profile/setup"      element={<ProfileSetup />} />
+              <Route path="/candidate/profile/edit"       element={<EditProfile />} />
             </Route>
           </Route>
         </Route>
 
-        {/* Public jobs landing (reuses candidate layout + guard) */}
-        <Route element={<ProtectedRoute allowedRoles={['candidate']} />}>
-          <Route element={<ProfileSetupGuard />}>
-            <Route element={<MainLayout role="candidate" />}>
-              <Route path="/jobs" element={<JobsPage />} />
-            </Route>
-          </Route>
-        </Route>
 
         {/* HR protected routes (also checks HR profile completion) */}
         <Route element={<ProtectedRoute allowedRoles={['hr']} />}>

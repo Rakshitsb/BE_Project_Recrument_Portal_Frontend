@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Row, Col, Card, Input, Select, Tag, Button, Typography, Space, Empty,
 } from 'antd'
@@ -34,13 +35,22 @@ const mockJobs = [
 ]
 
 function JobCard({ job }) {
+  const navigate = useNavigate()
   return (
     <Card
       className="card-shadow fade-in-up"
       hoverable
+      style={{ cursor: 'pointer' }}
+      onClick={() => navigate(`/candidate/jobs/${job.id}`)}
       actions={[
         <Button key="save" type="text" icon={<HeartOutlined />}>Save</Button>,
-        <Button key="apply" type="primary" icon={<SendOutlined />} size="small">
+        <Button
+          key="apply"
+          type="primary"
+          icon={<SendOutlined />}
+          size="small"
+          onClick={(e) => { e.stopPropagation(); navigate(`/candidate/jobs/${job.id}`) }}
+        >
           Apply
         </Button>,
       ]}

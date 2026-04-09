@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Card,
   Avatar,
@@ -17,6 +18,7 @@ import TagBadge from './TagBadge'
 const { Title, Text, Paragraph } = Typography
 
 function JobCard({ job }) {
+  const navigate = useNavigate()
   const initials = useMemo(
     () =>
       job.company
@@ -32,8 +34,15 @@ function JobCard({ job }) {
     <Card
       className="shadow-sm hover:shadow-lg transition-shadow h-full"
       bodyStyle={{ padding: 16 }}
+      style={{ cursor: 'pointer' }}
+      onClick={() => navigate(`/candidate/jobs/${job.id}`)}
       actions={[
-        <Button key="view" type="link" icon={<ArrowRightOutlined />}>
+        <Button
+          key="view"
+          type="link"
+          icon={<ArrowRightOutlined />}
+          onClick={(e) => { e.stopPropagation(); navigate(`/candidate/jobs/${job.id}`) }}
+        >
           View Jobs
         </Button>,
       ]}

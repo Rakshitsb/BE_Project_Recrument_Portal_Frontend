@@ -3,18 +3,19 @@ import {
   Form, Input, DatePicker, Select, Radio, Row, Col, Typography, Divider,
 } from 'antd'
 import {
-  UserOutlined, MailOutlined, PhoneOutlined, TagsOutlined,
+  UserOutlined, MailOutlined, PhoneOutlined, TagsOutlined, EnvironmentOutlined,
 } from '@ant-design/icons'
+import DynamicListField from './DynamicListField'
 
-const { Text } = Typography
+const { Text }     = Typography
 const { TextArea } = Input
-const { Option } = Select
+const { Option }   = Select
 
 const GENDER_OPTIONS = [
-  { label: 'Male',               value: 'male' },
-  { label: 'Female',             value: 'female' },
-  { label: 'Non-binary',         value: 'non-binary' },
-  { label: 'Prefer not to say',  value: 'prefer-not-to-say' },
+  { label: 'Male',              value: 'male' },
+  { label: 'Female',            value: 'female' },
+  { label: 'Non-binary',        value: 'non-binary' },
+  { label: 'Prefer not to say', value: 'prefer-not-to-say' },
 ]
 
 const SKILL_OPTIONS = [
@@ -26,6 +27,81 @@ const SKILL_OPTIONS = [
 const ACCOUNT_TYPES = [
   { label: '👤  Job Seeker / Candidate', value: 'candidate' },
   { label: '🧑‍💼  HR / Employer',          value: 'hr' },
+]
+
+// ── Education entry field config ──────────────────────────────────────────────
+const EDUCATION_FIELDS = [
+  {
+    name: 'degree',
+    label: 'Degree / Qualification',
+    placeholder: 'e.g. B.Tech in Computer Science',
+    span: 24,
+    required: true,
+  },
+  {
+    name: 'institution',
+    label: 'Institution / University',
+    placeholder: 'e.g. IIT Delhi',
+    span: 16,
+    required: true,
+  },
+  {
+    name: 'year',
+    label: 'Year',
+    placeholder: 'e.g. 2022–2026',
+    span: 8,
+  },
+]
+
+// ── Experience entry field config ─────────────────────────────────────────────
+const EXPERIENCE_FIELDS = [
+  {
+    name: 'title',
+    label: 'Job Title',
+    placeholder: 'e.g. Frontend Developer',
+    span: 12,
+    required: true,
+  },
+  {
+    name: 'company',
+    label: 'Company',
+    placeholder: 'e.g. TechCorp',
+    span: 12,
+  },
+  {
+    name: 'duration',
+    label: 'Duration',
+    placeholder: 'e.g. Jan 2023 – Mar 2024',
+    span: 12,
+  },
+  {
+    name: 'description',
+    label: 'Description',
+    placeholder: 'Key responsibilities or achievements...',
+    span: 24,
+    textarea: true,
+    rows: 2,
+  },
+]
+
+// ── Project entry field config ────────────────────────────────────────────────
+const PROJECT_FIELDS = [
+  {
+    name: 'name',
+    label: 'Project Name',
+    placeholder: 'e.g. E-Commerce Platform',
+    span: 24,
+    required: true,
+  },
+  {
+    name: 'description',
+    label: 'Description',
+    placeholder: 'What did you build and what was your role?',
+    span: 24,
+    textarea: true,
+    rows: 3,
+    maxLength: 500,
+  },
 ]
 
 const sectionLabel = (text) => (
@@ -49,11 +125,20 @@ const sectionLabel = (text) => (
  * Renders only Form.Items — does NOT wrap in its own <Form>.
  * The parent ProfileSetup owns the <Form> and form instance,
  * so onFinish fires correctly on submit.
+ *
+ * Sections:
+ *  - Personal Details (name, email, phone, dob, gender, location)
+ *  - Skills
+ *  - Education (dynamic list — degree, institution, year)
+ *  - Work Experience (dynamic list — title, company, duration, description)
+ *  - Projects (dynamic list — name, description)
+ *  - Bio
+ *  - Account Type
  */
 const ProfileForm = memo(function ProfileForm() {
   return (
     <>
-      {/* ── Personal Details ────────────────────────────────────── */}
+      {/* ── Personal Details ─────────────────────────────────────── */}
       {sectionLabel('Personal Details')}
 
       <Row gutter={[16, 0]}>
@@ -88,6 +173,11 @@ const ProfileForm = memo(function ProfileForm() {
           </Form.Item>
         </Col>
         <Col xs={24} md={12}>
+          <Form.Item name="location" label="Location">
+            <Input prefix={<EnvironmentOutlined />} placeholder="e.g. Pune, India" />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
           <Form.Item name="dob" label="Date of Birth">
             <DatePicker
               style={{ width: '100%' }}
@@ -110,19 +200,18 @@ const ProfileForm = memo(function ProfileForm() {
 
       <Divider style={{ margin: '8px 0 20px' }} />
 
-      {/* ── Professional Details ─────────────────────────────────── */}
-      {sectionLabel('Professional Details')}
+      {/* ── Skills ────────────────────────────────────────────────── */}
+      {sectionLabel('Skills')}
 
       <Form.Item
         name="skills"
-        label="Skills"
         tooltip="Select or type your skills"
       >
         <Select
           mode="tags"
           placeholder={<><TagsOutlined /> Add skills</>}
           tokenSeparators={[',']}
-          maxTagCount={12}
+          maxTagCount={20}
         >
           {SKILL_OPTIONS.map((s) => (
             <Option key={s} value={s}>{s}</Option>
@@ -130,27 +219,59 @@ const ProfileForm = memo(function ProfileForm() {
         </Select>
       </Form.Item>
 
-      <Form.Item name="education" label="Education">
-        <TextArea
-          placeholder="e.g. B.Tech Computer Science — IIT Delhi (2018–2022)"
-          rows={2}
-          showCount
-          maxLength={300}
-        />
-      </Form.Item>
+      <Divider style={{ margin: '8px 0 20px' }} />
 
-      <Form.Item name="experience" label="Work Experience">
+      {/* ── Education ─────────────────────────────────────────────── */}
+      <DynamicListField
+        name="education"
+        label="Education"
+        addLabel="Add Education"
+        fields={EDUCATION_FIELDS}
+        emptyText="No education added"
+        maxItems={5}
+      />
+
+      <Divider style={{ margin: '0 0 20px' }} />
+
+      {/* ── Work Experience ───────────────────────────────────────── */}
+      <DynamicListField
+        name="experience"
+        label="Work Experience"
+        addLabel="Add Experience"
+        fields={EXPERIENCE_FIELDS}
+        emptyText="No work experience added"
+        maxItems={10}
+      />
+
+      <Divider style={{ margin: '0 0 20px' }} />
+
+      {/* ── Projects ──────────────────────────────────────────────── */}
+      <DynamicListField
+        name="projects"
+        label="Projects"
+        addLabel="Add Project"
+        fields={PROJECT_FIELDS}
+        emptyText="No projects added"
+        maxItems={10}
+      />
+
+      <Divider style={{ margin: '0 0 20px' }} />
+
+      {/* ── Bio ───────────────────────────────────────────────────── */}
+      {sectionLabel('Bio')}
+
+      <Form.Item name="bio">
         <TextArea
-          placeholder="e.g. 2 years at TechCorp as Frontend Developer"
-          rows={3}
+          placeholder="A short professional summary about yourself..."
+          rows={4}
           showCount
-          maxLength={500}
+          maxLength={1000}
         />
       </Form.Item>
 
       <Divider style={{ margin: '8px 0 20px' }} />
 
-      {/* ── Account Type ─────────────────────────────────────────── */}
+      {/* ── Account Type ──────────────────────────────────────────── */}
       {sectionLabel('Account Type')}
 
       <Form.Item name="accountType" rules={[{ required: true }]}>

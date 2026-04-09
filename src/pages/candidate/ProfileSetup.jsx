@@ -1,17 +1,20 @@
 import { useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Form, Button, Card, Typography, Steps, Row, Col, Divider, Tag, App,
 } from 'antd'
 import {
   UploadOutlined, UserOutlined, CheckCircleOutlined, SaveOutlined,
+  ArrowLeftOutlined,
 } from '@ant-design/icons'
 import FileUpload   from '../../components/ui/FileUpload'
 import AvatarUpload from '../../components/ui/AvatarUpload'
 import ProfileForm  from '../../components/ui/ProfileForm'
+import PageHeader   from '../../components/ui/PageHeader'
 import useProfileSetup from '../../hooks/useProfileSetup'
 import useProfileStore from '../../store/profileStore'
 
-const { Title, Text, Paragraph } = Typography
+const { Title, Text } = Typography
 
 // ── Step indicator config ─────────────────────────────────────────
 const STEPS = [
@@ -22,6 +25,7 @@ const STEPS = [
 
 function ProfileSetup() {
   const [form] = Form.useForm()
+  const navigate = useNavigate()
   const { profileData } = useProfileStore()
 
   const {
@@ -45,30 +49,23 @@ function ProfileSetup() {
   }, [form])
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '32px 16px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-      }}
-    >
-      {/* ── Page Title ── */}
-      <div style={{ textAlign: 'center', marginBottom: 28, color: '#fff' }}>
-        <div style={{ fontSize: 40, marginBottom: 8 }}>✨</div>
-        <Title level={2} style={{ color: '#fff', margin: 0 }}>
-          Set Up Your Profile
-        </Title>
-        <Paragraph style={{ color: 'rgba(255,255,255,0.8)', margin: '8px 0 0' }}>
-          Upload your resume and we'll fill in the details for you
-        </Paragraph>
-      </div>
+    <div className="fade-in-up">
+      <PageHeader
+        title="Create Profile with AI"
+        subtitle="Upload your resume and we'll fill in the details automatically"
+        actions={
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate('/candidate/profile')}
+          >
+            Back
+          </Button>
+        }
+      />
 
       {/* ── Step Progress ── */}
       <Card
-        style={{ width: '100%', maxWidth: 760, borderRadius: 16, marginBottom: 20 }}
+        style={{ marginBottom: 20 }}
         bodyStyle={{ padding: '20px 24px' }}
       >
         <Steps current={activeStep} items={STEPS} size="small" />
@@ -76,7 +73,7 @@ function ProfileSetup() {
 
       {/* ── Main Card ── */}
       <Card
-        style={{ width: '100%', maxWidth: 760, borderRadius: 16 }}
+        style={{ borderRadius: 16 }}
         bodyStyle={{ padding: '32px 36px' }}
       >
         {/* ── Avatar + Resume side by side ── */}
@@ -147,16 +144,11 @@ function ProfileSetup() {
               size="large"
               style={{ minWidth: 160, fontWeight: 600, borderRadius: 8 }}
             >
-              {submitting ? 'Saving…' : 'Save Profile'}
+              {submitting ? 'Creating…' : 'Create Profile'}
             </Button>
           </div>
         </Form>
       </Card>
-
-      {/* ── Footer note ── */}
-      <Text style={{ color: 'rgba(255,255,255,0.6)', marginTop: 20, fontSize: 13 }}>
-        🔒 Your data is secure and will never be shared without consent
-      </Text>
     </div>
   )
 }
