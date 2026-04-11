@@ -5,6 +5,7 @@ import dayjs from 'dayjs'
 import profileService from '../services/profileService'
 import useProfileStore from '../store/profileStore'
 import useAuthStore from '../store/authStore'
+import { invalidateProfileCache } from './useProfile'
 
 /**
  * useProfileSetup
@@ -19,7 +20,7 @@ function useProfileSetup(form) {
   const navigate    = useNavigate()
 
   const { setProfileData, updateField, profileData } = useProfileStore()
-  const { updateUser }                               = useAuthStore()
+  const { updateUser }             = useAuthStore()
 
   const [resumeUploading, setResumeUploading] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
@@ -44,14 +45,45 @@ function useProfileSetup(form) {
           : []
 
         const formData = {
-          fullName:   parsed.fullName   || '',
-          email:      parsed.email      || '',
-          phone:      parsed.phone      || '',
-          skills,
-          education:  parsed.education  || '',
-          experience: parsed.experience || '',
-          gender:     parsed.gender     || '',
-          dob:        parsed.dob        ? dayjs(parsed.dob) : null,
+          fullName:   parsed.full_name   || parsed.fullName   || '',
+          email:      parsed.email       || '',
+          phone:      parsed.phone       || '',
+          location:   parsed.location    || '',
+          skills:     Array.isArray(parsed.skills)
+                      ? parsed.skills
+                      : typeof parsed.skills === 'string'
+                      ? parsed.skills.split(',').map((s) => s.trim())
+                      : [],
+          // education: AI returns array of { degree, institution, year }
+          education:  Array.isArray(parsed.education)
+                      ? parsed.education.map((e) => ({
+                          degree:      e.degree      || '',
+                          institution: e.institution || '',
+                          year:        e.year        || '',
+                        }))
+                      : parsed.education
+                      ? [{ degree: parsed.education, institution: '', year: '' }]
+                      : [],
+          // experience: AI returns array of { title, company, duration, description }
+          //             or empty array
+          experience: Array.isArray(parsed.experience)
+                      ? parsed.experience.map((e) => ({
+                          title:       e.title       || '',
+                          company:     e.company     || '',
+                          duration:    e.duration    || '',
+                          description: e.description || '',
+                        }))
+                      : [],
+          // projects: AI returns array of { name, description }
+          projects:   Array.isArray(parsed.projects)
+                      ? parsed.projects.map((p) => ({
+                          name:        p.name        || '',
+                          description: p.description || '',
+                        }))
+                      : [],
+          bio:        parsed.bio    || '',
+          gender:     parsed.gender || '',
+          dob:        parsed.dob ? dayjs(parsed.dob) : null,
         }
 
         setProfileData(formData)
@@ -94,22 +126,66 @@ function useProfileSetup(form) {
     async (values) => {
       setSubmitting(true)
       try {
+        // ── Serialize education array → readable string for backend ──
+        const educationStr = Array.isArray(values.education)
+          ? values.education
+              .filter((e) => e?.degree)
+              .map((e) => [
+                  e.degree,
+                  e.institution && `at ${e.institution}`,
+                  e.year        && `(${e.year})`,
+                ].filter(Boolean).join(' '))
+              .join(' | ')
+          : values.education || ''
+
+        // ── Serialize experience array → readable string for backend ──
+        const experienceStr = Array.isArray(values.experience)
+          ? values.experience
+              .filter((e) => e?.title)
+              .map((e) => [
+                  e.title,
+                  e.company  && `at ${e.company}`,
+                  e.duration && `(${e.duration})`,
+                  e.description,
+                ].filter(Boolean).join(' — '))
+              .join(' | ')
+          : values.experience || ''
+
         const payload = {
-          ...values,
-          dob:        values.dob ? values.dob.format('YYYY-MM-DD') : null,
-          avatarUrl:  profileData.avatarUrl,
-          skills:     values.skills || [],
+          fullName:  values.fullName   || '',
+          email:     values.email      || '',
+          phone:     values.phone      || '',
+          location:  values.location   || '',
+          skills:    values.skills     || [],
+          education: educationStr,
+          experience: experienceStr,
+          bio:       values.bio        || null,
+          resumeUrl: profileData.avatarUrl || null,
+          dob:       values.dob
+                     ? values.dob.format('YYYY-MM-DD')
+                     : null,
+          gender:    values.gender     || null,
         }
 
         await profileService.saveProfile(payload)
 
-        // Mark profile as complete in auth store
-        updateUser({ profileCompleted: true, name: values.fullName })
+        // ── Bust the profile cache so CandidateProfile re-fetches immediately ──
+        invalidateProfileCache()
 
-        message.success('🎉 Profile saved successfully! Welcome to HireBase.')
-        navigate('/candidate/jobs', { replace: true })
+        // ── Update user name in authStore ──
+        updateUser({ name: values.fullName })
+
+        message.success('🎉 Profile created! Welcome to HireBase.')
+
+        // ── Navigate to profile page to see created profile ──
+        navigate('/candidate/profile', { replace: true })
+
       } catch (err) {
-        const msg = err.response?.data?.message || 'Failed to save profile. Please try again.'
+        const msg =
+          err.response?.data?.detail?.[0]?.msg ||
+          err.response?.data?.detail ||
+          err.response?.data?.message ||
+          'Failed to save profile. Please try again.'
         message.error(msg)
       } finally {
         setSubmitting(false)

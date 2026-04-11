@@ -36,6 +36,8 @@ const useAuthStore = create(
         set((state) => ({
           user: { ...state.user, ...fields },
         })),
+
+
     }),
     {
       name: 'auth-storage', // localStorage key

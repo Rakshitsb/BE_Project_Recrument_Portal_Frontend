@@ -86,18 +86,19 @@ function useAuth() {
     async (credentials) => {
       setLoading(true)
       try {
-        const data = await authService.login(credentials)
+        // authService.login returns { token, user: { email, role, profileCompleted } }
+        const { token, user } = await authService.login(credentials)
 
         const userData = {
-          email: credentials.email,
-          role: data.role,
-          name: credentials.email.split('@')[0], // fallback display name
-          profileCompleted: true,                 // returning user — skip setup
+          email:            user.email,
+          role:             user.role,
+          name:             credentials.email.split('@')[0], // fallback display name
+          profileCompleted: user.profileCompleted,           // ?? true already applied in authService
         }
 
-        storeLogin(userData, data.access_token)
+        storeLogin(userData, token)
         message.success('Welcome back!')
-        navigate(ROLE_HOME[data.role] ?? '/candidate', { replace: true })
+        navigate(ROLE_HOME[user.role] ?? '/candidate', { replace: true })
       } catch (err) {
         message.error(parseApiError(err))
       } finally {
@@ -118,25 +119,26 @@ function useAuth() {
     async (payload) => {
       setLoading(true)
       try {
-        const data = await authService.register(payload)
+        // authService.register returns { token, user: { name, email, role, profileCompleted } }
+        const { token, user } = await authService.register(payload)
 
         const userData = {
-          name: payload.name,
-          email: payload.email,
-          role: data.role,
+          name:             user.name,
+          email:            user.email,
+          role:             user.role,
           profileCompleted: false,  // new user — must complete setup
         }
 
-        storeLogin(userData, data.access_token)
+        storeLogin(userData, token)
         message.success('Account created successfully!')
 
         // Redirect to profile setup based on role
-        if (data.role === 'candidate') {
+        if (user.role === 'candidate') {
           navigate('/profile-setup', { replace: true })
-        } else if (data.role === 'hr') {
+        } else if (user.role === 'hr') {
           navigate('/hr-profile-setup', { replace: true })
         } else {
-          navigate(ROLE_HOME[data.role] ?? '/candidate', { replace: true })
+          navigate(ROLE_HOME[user.role] ?? '/candidate', { replace: true })
         }
       } catch (err) {
         message.error(parseApiError(err))
