@@ -1,3 +1,5 @@
+import api from './api'
+
 const mockJobs = [
   {
     id: '1',
@@ -143,6 +145,32 @@ const mockJobs = [
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
+const normalizeJob = (job) => {
+  const company = job.company || job.hr_name || job.organisation || 'Unknown Company'
+  const tags = Array.isArray(job.required_skills) && job.required_skills.length
+    ? job.required_skills
+    : ['General']
+
+  return {
+    id: job.id,
+    title: job.title,
+    company,
+    description: job.description || 'No description provided.',
+    location: job.location || 'Remote',
+    job_type: job.job_type || 'Full-Time',
+    salary_range: job.salary_range || '—',
+    experience_required: job.experience_required ?? 0,
+    cover_letter_required: job.cover_letter_required ?? false,
+    is_active: job.is_active ?? true,
+    postedAt: job.created_at ? new Date(job.created_at).toISOString().slice(0, 10) : '—',
+    tags,
+    jobsCount: job.jobsCount || 1,
+    logoBg: job.logoBg || '#1677ff',
+    industry: job.industry || '—',
+    company_size: job.company_size || '—',
+  }
+}
+
 function filterJobs(list, filters) {
   const searchTerm = filters.searchTerm?.toLowerCase() || ''
   const locations = filters.location && filters.location !== 'Anywhere'
@@ -180,23 +208,69 @@ function sortJobs(list, sort) {
 }
 
 export async function fetchJobs(filters = {}, page = 1, pageSize = 6) {
-  await delay(500)
-  const filtered = sortJobs(filterJobs(mockJobs, filters), filters.sort)
-  const start = (page - 1) * pageSize
-  const end = start + pageSize
+  // First try the real backend
+  try {
+    const params = {
+      search: filters.searchTerm || undefined,
+      location: filters.location && filters.location !== 'Anywhere' ? filters.location : undefined,
+      industries: filters.industries?.length ? filters.industries.join(',') : undefined,
+      sizes: filters.sizes?.length ? filters.sizes.join(',') : undefined,
+      categories: filters.categories?.length ? filters.categories.join(',') : undefined,
+      tags: filters.tags?.length ? filters.tags.join(',') : undefined,
+      sort: filters.sort || undefined,
+      page,
+      page_size: pageSize,
+    }
 
-  return {
-    data: filtered.slice(start, end),
-    total: filtered.length,
+    const { data } = await api.get('/jobs', { params })
+    // Expecting { results, total } or array fallback
+    const rawResults = data.results ?? data.data ?? data
+    const total = data.total ?? rawResults?.length ?? 0
+
+    const results = Array.isArray(rawResults) ? rawResults.map(normalizeJob) : []
+    return { data: results, total }
+  } catch (err) {
+    // Fallback to mock data when backend is unreachable
+    if (!err.response) {
+      await delay(500)
+      const filtered = sortJobs(filterJobs(mockJobs, filters), filters.sort)
+      const start = (page - 1) * pageSize
+      const end = start + pageSize
+      return { data: filtered.slice(start, end).map(normalizeJob), total: filtered.length }
+    }
+    throw err
+  }
+}
+
+export async function fetchJobById(id) {
+  try {
+    const { data } = await api.get(`/jobs/${id}`)
+    const job = data.result ?? data.data ?? data
+    return normalizeJob(job)
+  } catch (err) {
+    if (!err.response) {
+      const fallback = mockJobs.find((j) => String(j.id) === String(id))
+      if (fallback) return normalizeJob(fallback)
+    }
+    throw err
   }
 }
 
 export async function fetchCompanies() {
-  await delay(200)
-  return Array.from(new Set(mockJobs.map((job) => job.company)))
+  try {
+    const { data } = await api.get('/jobs/companies')
+    return data.results ?? data
+  } catch (err) {
+    if (!err.response) {
+      await delay(200)
+      return Array.from(new Set(mockJobs.map((job) => job.company)))
+    }
+    throw err
+  }
 }
 
 export default {
   fetchJobs,
+  fetchJobById,
   fetchCompanies,
 }

@@ -21,7 +21,7 @@ const { Text } = Typography
 // ── Menu configs per role ─────────────────────────────────────────
 const candidateMenuItems = [
   { key: '/candidate',              icon: <DashboardOutlined />, label: 'Dashboard' },
-  { key: '/jobs',                   icon: <SearchOutlined />,    label: 'Browse Jobs' },
+  { key: '/candidate/jobs',         icon: <SearchOutlined />,    label: 'Browse Jobs' },
   { key: '/candidate/applications', icon: <FileTextOutlined />,  label: 'My Applications' },
   { key: '/candidate/profile',      icon: <UserOutlined />,      label: 'My Profile' },
 ]

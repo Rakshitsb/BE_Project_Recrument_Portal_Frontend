@@ -17,7 +17,8 @@ const { Title, Text } = Typography
 
 // ── Sub-component: single application card ────────────────────────────────────
 function ApplicationCard({ app, onView, onWithdraw, withdrawingId }) {
-  const initials = app.company[0].toUpperCase()
+  const companyName = app?.company || app?.company_name || 'Unknown'
+  const initials = companyName?.[0]?.toUpperCase?.() || '?'
 
   return (
     <Card
@@ -55,7 +56,7 @@ function ApplicationCard({ app, onView, onWithdraw, withdrawingId }) {
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <Title level={5} style={{ margin: 0 }} ellipsis>{app.job_title}</Title>
-              <Text type="secondary" style={{ fontSize: 13 }}>{app.company}</Text>
+              <Text type="secondary" style={{ fontSize: 13 }}>{companyName}</Text>
             </div>
             <StatusBadge status={app.status} />
           </div>
@@ -66,15 +67,15 @@ function ApplicationCard({ app, onView, onWithdraw, withdrawingId }) {
       <div className="flex flex-col gap-1">
         <Text style={{ fontSize: 13 }}>
           <EnvironmentOutlined style={{ marginRight: 6, color: '#8c8c8c' }} />
-          {app.location}
+          {app.location || '—'}
         </Text>
         <Text style={{ fontSize: 13 }}>
           <DollarOutlined style={{ marginRight: 6, color: '#52c41a' }} />
-          {app.salary_range}
+          {app.salary_range || '—'}
         </Text>
         <Text style={{ fontSize: 13 }}>
           <CalendarOutlined style={{ marginRight: 6, color: '#8c8c8c' }} />
-          Applied {app.applied_at}
+          Applied {app.applied_at || '—'}
         </Text>
       </div>
     </Card>

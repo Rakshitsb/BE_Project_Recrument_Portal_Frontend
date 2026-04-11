@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   App,
@@ -8,6 +8,7 @@ import {
   Card,
   Divider,
   Input,
+  Result,
   Tag,
   Typography,
 } from 'antd'
@@ -21,43 +22,28 @@ import {
 } from '@ant-design/icons'
 import TagBadge from '../../components/ui/TagBadge'
 import StatusBadge from '../../components/ui/StatusBadge'
+import applicationService from '../../services/applicationService'
+import jobService from '../../services/jobService'
 
 const { Title, Text, Paragraph } = Typography
 const { TextArea } = Input
-
-// ── TODO: replace with jobService.getJobById(jobId) ──
-const mockJob = {
-  id: '1',
-  title: 'Senior React Engineer',
-  company: 'TechNova Labs',
-  description:
-    'We are looking for a Senior React Engineer to lead the web platform team building customer-facing dashboards. You will work closely with product and design to ship high-quality features at scale.',
-  location: 'Remote',
-  job_type: 'Full-Time',
-  experience_required: 3,
-  salary_range: '$80k–$120k',
-  required_skills: ['React', 'TypeScript', 'GraphQL', 'Node.js', 'AWS'],
-  cover_letter_required: true,
-  is_active: true,
-  posted_at: '2026-03-20',
-  company_size: '201-500',
-  industry: 'Technology',
-  logoBg: '#1677ff',
-}
 
 // ── Sub-component: Left column ────────────────────────────────────────────────
 function JobDetailInfo({ job }) {
   const navigate = useNavigate()
 
+  const companyName = job.company || 'Unknown Company'
+  const requiredSkills = job.required_skills || job.tags || []
+
   const initials = useMemo(
     () =>
-      job.company
-        .split(' ')
-        .map((w) => w[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase(),
-    [job.company]
+      companyName
+        ?.split(' ')
+        ?.map((w) => w[0])
+        ?.join('')
+        ?.slice(0, 2)
+        ?.toUpperCase() || '?',
+    [companyName]
   )
 
   return (
@@ -79,7 +65,7 @@ function JobDetailInfo({ job }) {
         </Avatar>
         <div>
           <Title level={3} style={{ margin: 0 }}>{job.title}</Title>
-          <Text type="secondary" style={{ fontSize: 15 }}>{job.company}</Text>
+          <Text type="secondary" style={{ fontSize: 15 }}>{companyName}</Text>
           {job.is_active && (
             <div style={{ marginTop: 4 }}>
               <StatusBadge status="active" />
@@ -109,9 +95,11 @@ function JobDetailInfo({ job }) {
       {/* Required Skills */}
       <Title level={5} style={{ marginBottom: 12 }}>Required Skills</Title>
       <div className="flex flex-wrap gap-2" style={{ marginBottom: 20 }}>
-        {job.required_skills.map((skill) => (
+        {requiredSkills.length ? requiredSkills.map((skill) => (
           <TagBadge key={skill} label={skill} />
-        ))}
+        )) : (
+          <Text type="secondary">Not specified</Text>
+        )}
       </div>
 
       <Divider style={{ margin: '16px 0' }} />
@@ -128,8 +116,8 @@ function JobDetailInfo({ job }) {
         {[
           { label: 'Industry',      value: job.industry },
           { label: 'Company Size',  value: job.company_size },
-          { label: 'Posted On',     value: job.posted_at },
-          { label: 'Job Type',      value: job.job_type },
+          { label: 'Posted On',     value: job.posted_at || job.postedAt || '—' },
+          { label: 'Job Type',      value: job.job_type || '—' },
         ].map(({ label, value }) => (
           <div key={label}>
             <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>{label}</Text>
@@ -151,11 +139,25 @@ function ApplyCard({ job }) {
   const [applied, setApplied]         = useState(false)
 
   const handleSubmit = async () => {
+    if (job.cover_letter_required && !coverLetter.trim()) {
+      message.warning('Cover letter is required for this job.')
+      return
+    }
+
     setSubmitting(true)
-    await new Promise((r) => setTimeout(r, 1200))
-    setSubmitting(false)
-    setApplied(true)
-    message.success('Application submitted successfully!')
+    try {
+      await applicationService.applyToJob({
+        job_id: job.id,
+        cover_letter: coverLetter,
+      })
+      setApplied(true)
+      message.success('Application submitted successfully!')
+    } catch (err) {
+      const errMsg = err.response?.data?.message || err.message || 'Failed to submit application.'
+      message.error(errMsg)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -227,31 +229,62 @@ function ApplyCard({ job }) {
 // ── Main page component ───────────────────────────────────────────────────────
 function JobDetailPage() {
   const { jobId } = useParams()
+  const [job, setJob] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  // ── TODO: replace with jobService.getJobById(jobId) ──
-  const job = mockJob
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const data = await jobService.fetchJobById(jobId)
+        if (mounted) setJob(data)
+      } catch (err) {
+        if (mounted) setError(err.response?.data?.message || err.message || 'Unable to load job.')
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+    load()
+    return () => { mounted = false }
+  }, [jobId])
 
   return (
     <App>
       <div className="fade-in-up">
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 24,
-            alignItems: 'start',
-          }}
-        >
-          {/* Left — 2/3 width */}
-          <div style={{ gridColumn: 'span 2' }}>
-            <JobDetailInfo job={job} />
-          </div>
+        {error && (
+          <Result
+            status="error"
+            title="Unable to load job"
+            subTitle={error}
+            extra={<Button onClick={() => window.location.reload()}>Retry</Button>}
+          />
+        )}
 
-          {/* Right — 1/3 width */}
-          <div style={{ gridColumn: 'span 1' }}>
-            <ApplyCard job={job} />
+        {!error && (loading || !job) ? (
+          <Result status="info" title="Loading job details..." />
+        ) : (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: 24,
+              alignItems: 'start',
+            }}
+          >
+            {/* Left — 2/3 width */}
+            <div style={{ gridColumn: 'span 2' }}>
+              <JobDetailInfo job={job} />
+            </div>
+
+            {/* Right — 1/3 width */}
+            <div style={{ gridColumn: 'span 1' }}>
+              <ApplyCard job={job} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </App>
   )
