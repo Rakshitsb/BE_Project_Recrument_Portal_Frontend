@@ -1,56 +1,52 @@
 import { useRef, useState, useEffect } from 'react'
-import { Button, Space, Skeleton, Result, App } from 'antd'
+import { Button, Card, Space, Skeleton, Result, App } from 'antd'
 import { EditOutlined, SaveOutlined } from '@ant-design/icons'
 
-import { PageHeader }        from '../../components/ui'
-import { HRProfileCard }     from '../../components/hr/HRProfileCard'
+import { PageHeader } from '../../components/ui'
+import { HRProfileCard } from '../../components/hr/HRProfileCard'
 import { HRProfileEditForm } from '../../components/hr/HRProfileEditForm'
-import useApiCall            from '../../hooks/useApiCall'
-import { hrProfileService }  from '../../services'
+import useApiCall from '../../hooks/useApiCall'
+import { hrProfileService } from '../../services'
 
-/**
- * HRProfile
- * Shows the HR user's profile in read-only or editable mode.
- * Fetches profile from GET /hr/profile on mount.
- * Saves changes via PUT /hr/profile.
- */
 export function HRProfile() {
   const { message } = App.useApp()
   const formRef = useRef(null)
 
   const [editMode, setEditMode] = useState(false)
-  const [profile,  setProfile]  = useState(null)
 
-  // ── API hooks ──────────────────────────────────────────────────
   const { execute: fetchProfile, loading: fetchLoading, error, data } =
     useApiCall(hrProfileService.getProfile)
 
-  const { execute: saveProfile, loading: saveLoading } =
+  const { execute: createProfile, loading: createLoading } =
+    useApiCall(hrProfileService.createProfile)
+
+  const { execute: updateProfile, loading: updateLoading } =
     useApiCall(hrProfileService.updateProfile)
 
-  // ── Fetch on mount ─────────────────────────────────────────────
-  useEffect(() => { fetchProfile() }, [])
-
-  // ── Sync API data into local state ─────────────────────────────
   useEffect(() => {
-    if (data) setProfile(data)
-  }, [data])
+    fetchProfile()
+  }, [fetchProfile])
 
-  // ── Handlers ──────────────────────────────────────────────────
+  const profile = data ?? null
+  const saveLoading = createLoading || updateLoading
+
   const handleSave = async (values) => {
     try {
-      await saveProfile(values)
-      setProfile((prev) => ({ ...prev, ...values }))
+      if (profile?.id) {
+        await updateProfile(values)
+      } else {
+        await createProfile(values)
+      }
+      await fetchProfile()
       setEditMode(false)
-      message.success('Profile updated successfully!')
+      message.success(profile?.id ? 'Profile updated successfully!' : 'Profile created successfully!')
     } catch {
-      // error already shown by useApiCall
+      // error already handled in useApiCall
     }
   }
 
   const handleCancel = () => setEditMode(false)
 
-  // ── Header actions ─────────────────────────────────────────────
   const viewActions = (
     <Button icon={<EditOutlined />} onClick={() => setEditMode(true)}>
       Edit Profile
@@ -73,7 +69,6 @@ export function HRProfile() {
     </Space>
   )
 
-  // ── Loading state ──────────────────────────────────────────────
   if (fetchLoading && !profile) {
     return (
       <div>
@@ -86,8 +81,7 @@ export function HRProfile() {
     )
   }
 
-  // ── Error state ────────────────────────────────────────────────
-  if (error && !profile) {
+  if (error) {
     return (
       <Result
         status="error"
@@ -98,7 +92,21 @@ export function HRProfile() {
     )
   }
 
-  // ── Main render ────────────────────────────────────────────────
+  if (!profile && !editMode) {
+    return (
+      <div>
+        <PageHeader
+          title="My Profile"
+          subtitle="Manage your personal and company information"
+          actions={viewActions}
+        />
+        <Card>
+          No HR profile found yet. Click "Edit Profile" to add your details.
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div>
       <PageHeader
@@ -107,16 +115,15 @@ export function HRProfile() {
         actions={editMode ? editActions : viewActions}
       />
 
-      {editMode
-        ? (
-          <HRProfileEditForm
-            ref={formRef}
-            profile={profile}
-            onSave={handleSave}
-          />
-        )
-        : <HRProfileCard profile={profile} />
-      }
+      {editMode ? (
+        <HRProfileEditForm
+          ref={formRef}
+          profile={profile || {}}
+          onSave={handleSave}
+        />
+      ) : (
+        <HRProfileCard profile={profile} />
+      )}
     </div>
   )
 }

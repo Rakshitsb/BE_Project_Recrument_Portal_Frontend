@@ -54,6 +54,9 @@ function AppRoutes() {
           <Route path="/login"    element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
         </Route>
+        <Route element={<ProtectedRoute allowedRoles={['candidate']} />}>
+          <Route path="/profile-setup" element={<ProfileSetup />} />
+        </Route>
 
 
         {/* HR Profile Setup — hr role, no layout shell */}
@@ -67,6 +70,7 @@ function AppRoutes() {
             <Route element={<MainLayout role="candidate" />}>
               <Route path="/candidate"                    element={<CandidateDashboard />} />
               <Route path="/candidate/jobs"               element={<JobsPage />} />
+              <Route path="/jobs"                         element={<JobsPage />} />
               <Route path="/candidate/jobs/:jobId"        element={<JobDetailPage />} />
               <Route path="/candidate/applications"       element={<MyApplications />} />
               <Route path="/candidate/profile"            element={<CandidateProfile />} />

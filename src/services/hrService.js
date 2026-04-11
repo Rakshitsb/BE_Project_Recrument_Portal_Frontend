@@ -114,8 +114,15 @@ const hrProfileService = {
    * @returns {Promise<object>} camelCase profile object
    */
   getProfile: async () => {
-    const { data } = await api.get('/hr/profile')
-    return fromBackendProfile(data)
+    try {
+      const { data } = await api.get('/hr/profile')
+      return fromBackendProfile(data)
+    } catch (err) {
+      if (err.response?.status === 404) {
+        return null
+      }
+      throw err
+    }
   },
 
   /**

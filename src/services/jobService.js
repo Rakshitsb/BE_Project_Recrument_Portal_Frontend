@@ -1,3 +1,5 @@
+import api from './api'
+
 const mockJobs = [
   {
     id: '1',
@@ -12,6 +14,11 @@ const mockJobs = [
     jobsCount: 4,
     postedAt: '2026-03-20',
     logoBg: '#1677ff',
+    jobType: 'Full-Time',
+    experienceRequired: 3,
+    salaryRange: '$80k-$120k',
+    coverLetterRequired: true,
+    isActive: true,
   },
   {
     id: '2',
@@ -26,6 +33,11 @@ const mockJobs = [
     jobsCount: 2,
     postedAt: '2026-03-22',
     logoBg: '#13c2c2',
+    jobType: 'Full-Time',
+    experienceRequired: 2,
+    salaryRange: '$70k-$100k',
+    coverLetterRequired: false,
+    isActive: true,
   },
   {
     id: '3',
@@ -40,108 +52,65 @@ const mockJobs = [
     jobsCount: 3,
     postedAt: '2026-03-25',
     logoBg: '#722ed1',
-  },
-  {
-    id: '4',
-    title: 'Blockchain Engineer',
-    company: 'ChainBridge',
-    description: 'Own smart contract development and audits for core protocol.',
-    location: 'Remote',
-    industry: 'Blockchain',
-    size: '11-50',
-    category: 'Engineering',
-    tags: ['Solidity', 'EVM', 'Security'],
-    jobsCount: 5,
-    postedAt: '2026-03-18',
-    logoBg: '#fa8c16',
-  },
-  {
-    id: '5',
-    title: 'People Operations Lead',
-    company: 'Northwind',
-    description: 'Scale hiring programs and talent experience globally.',
-    location: 'Austin, TX',
-    industry: 'Technology',
-    size: '501-1000',
-    category: 'People',
-    tags: ['HR', 'Talent', 'Operations'],
-    jobsCount: 1,
-    postedAt: '2026-03-12',
-    logoBg: '#2f54eb',
-  },
-  {
-    id: '6',
-    title: 'Growth Marketing Manager',
-    company: 'Storyline',
-    description: 'Own lifecycle campaigns and paid acquisition experiments.',
-    location: 'Remote',
-    industry: 'Media',
-    size: '51-200',
-    category: 'Marketing',
-    tags: ['Lifecycle', 'Performance', 'Analytics'],
-    jobsCount: 2,
-    postedAt: '2026-03-15',
-    logoBg: '#eb2f96',
-  },
-  {
-    id: '7',
-    title: 'Security Engineer',
-    company: 'ShieldOps',
-    description: 'Harden cloud infrastructure and lead incident response.',
-    location: 'Seattle, WA',
-    industry: 'Security',
-    size: '201-500',
-    category: 'Engineering',
-    tags: ['AWS', 'Kubernetes', 'Detection'],
-    jobsCount: 2,
-    postedAt: '2026-03-19',
-    logoBg: '#52c41a',
-  },
-  {
-    id: '8',
-    title: 'Business Analyst',
-    company: 'Everest Logistics',
-    description: 'Drive analytics for supply chain efficiency initiatives.',
-    location: 'Chicago, IL',
-    industry: 'Logistics',
-    size: '1001-5000',
-    category: 'Operations',
-    tags: ['SQL', 'Tableau', 'Stakeholder Management'],
-    jobsCount: 3,
-    postedAt: '2026-03-10',
-    logoBg: '#fa541c',
-  },
-  {
-    id: '9',
-    title: 'AI Product Manager',
-    company: 'Cortex AI',
-    description: 'Ship ML-powered features across enterprise products.',
-    location: 'Boston, MA',
-    industry: 'AI',
-    size: '201-500',
-    category: 'Product',
-    tags: ['Product Strategy', 'AI', 'Roadmaps'],
-    jobsCount: 2,
-    postedAt: '2026-03-21',
-    logoBg: '#1890ff',
-  },
-  {
-    id: '10',
-    title: 'Customer Success Manager',
-    company: 'Beacon CRM',
-    description: 'Champion enterprise customers and drive adoption targets.',
-    location: 'Remote',
-    industry: 'SaaS',
-    size: '51-200',
-    category: 'Customer',
-    tags: ['CSM', 'Enterprise', 'Onboarding'],
-    jobsCount: 4,
-    postedAt: '2026-03-08',
-    logoBg: '#7cb305',
+    jobType: 'Full-Time',
+    experienceRequired: 3,
+    salaryRange: '$90k-$130k',
+    coverLetterRequired: false,
+    isActive: true,
   },
 ]
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const COMPANY_COLORS = ['#1677ff', '#13c2c2', '#722ed1', '#fa8c16', '#2f54eb', '#52c41a', '#eb2f96']
+
+function pickColor(seed = '') {
+  const sum = seed.split('').reduce((total, char) => total + char.charCodeAt(0), 0)
+  return COMPANY_COLORS[sum % COMPANY_COLORS.length]
+}
+
+function safeArray(value) {
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string') {
+    return value.split(',').map((item) => item.trim()).filter(Boolean)
+  }
+  return []
+}
+
+function normalizeJob(data) {
+  const company =
+    data.company ||
+    data.company_name ||
+    data.hrCompany ||
+    data.hr_company ||
+    'Hiring Company'
+
+  const postedAt =
+    data.postedAt ||
+    data.posted_at ||
+    data.created_at?.split('T')[0] ||
+    ''
+
+  return {
+    id: String(data.id ?? ''),
+    title: data.title || 'Untitled Role',
+    company,
+    description: data.description || 'No description provided yet.',
+    location: data.location || 'Remote',
+    industry: data.industry || 'General',
+    size: data.size || data.company_size || data.companySize || 'Not specified',
+    category: data.category || 'General',
+    tags: safeArray(data.tags || data.required_skills || data.requiredSkills),
+    jobsCount: data.jobsCount ?? 1,
+    postedAt,
+    logoBg: data.logoBg || pickColor(company),
+    jobType: data.jobType || data.job_type || 'Not specified',
+    experienceRequired: data.experienceRequired ?? data.experience_required ?? 0,
+    salaryRange: data.salaryRange || data.salary_range || 'Not disclosed',
+    coverLetterRequired: Boolean(data.coverLetterRequired ?? data.cover_letter_required),
+    isActive: data.isActive ?? data.is_active ?? true,
+  }
+}
 
 function filterJobs(list, filters) {
   const searchTerm = filters.searchTerm?.toLowerCase() || ''
@@ -174,29 +143,57 @@ function filterJobs(list, filters) {
 
 function sortJobs(list, sort) {
   if (sort === 'latest') {
-    return [...list].sort((a, b) => new Date(b.postedAt) - new Date(a.postedAt))
+    return [...list].sort((a, b) => new Date(b.postedAt || 0) - new Date(a.postedAt || 0))
   }
   return list
 }
 
 export async function fetchJobs(filters = {}, page = 1, pageSize = 6) {
-  await delay(500)
-  const filtered = sortJobs(filterJobs(mockJobs, filters), filters.sort)
-  const start = (page - 1) * pageSize
-  const end = start + pageSize
+  try {
+    const { data } = await api.get('/jobs/')
+    const normalized = Array.isArray(data) ? data.map(normalizeJob) : []
+    const filtered = sortJobs(filterJobs(normalized, filters), filters.sort)
+    const start = (page - 1) * pageSize
+    const end = start + pageSize
 
-  return {
-    data: filtered.slice(start, end),
-    total: filtered.length,
+    return {
+      data: filtered.slice(start, end),
+      total: filtered.length,
+    }
+  } catch (err) {
+    if (err.response) throw err
+
+    await delay(500)
+    const filtered = sortJobs(filterJobs(mockJobs, filters), filters.sort)
+    const start = (page - 1) * pageSize
+    const end = start + pageSize
+
+    return {
+      data: filtered.slice(start, end),
+      total: filtered.length,
+    }
+  }
+}
+
+export async function getJobById(jobId) {
+  try {
+    const { data } = await api.get(`/jobs/${jobId}`)
+    return normalizeJob(data)
+  } catch (err) {
+    if (err.response) throw err
+
+    await delay(250)
+    return mockJobs.find((job) => job.id === String(jobId)) || normalizeJob({ id: jobId })
   }
 }
 
 export async function fetchCompanies() {
-  await delay(200)
-  return Array.from(new Set(mockJobs.map((job) => job.company)))
+  const { data } = await fetchJobs({}, 1, 100)
+  return Array.from(new Set(data.map((job) => job.company)))
 }
 
 export default {
   fetchJobs,
+  getJobById,
   fetchCompanies,
 }

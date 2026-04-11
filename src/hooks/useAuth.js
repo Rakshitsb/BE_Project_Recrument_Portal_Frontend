@@ -134,7 +134,7 @@ function useAuth() {
 
         // Redirect to profile setup based on role
         if (user.role === 'candidate') {
-          navigate('/profile-setup', { replace: true })
+          navigate('/candidate/profile/setup', { replace: true })
         } else if (user.role === 'hr') {
           navigate('/hr-profile-setup', { replace: true })
         } else {

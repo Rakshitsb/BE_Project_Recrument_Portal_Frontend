@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Row, Col, Card, Typography, Tag, Button, Avatar,
@@ -11,13 +11,15 @@ import {
 import StatusBadge from '../../components/ui/StatusBadge'
 import ConfirmModal from '../../components/ui/ConfirmModal'
 import PageHeader from '../../components/ui/PageHeader'
-import useApplications from '../../hooks/useApplications'
+import useApiCall from '../../hooks/useApiCall'
+import applicationService from '../../services/applicationService'
 
 const { Title, Text } = Typography
 
 // ── Sub-component: single application card ────────────────────────────────────
 function ApplicationCard({ app, onView, onWithdraw, withdrawingId }) {
-  const initials = app.company[0].toUpperCase()
+  const companyName = app.company || 'Hiring Company'
+  const initials = companyName[0].toUpperCase()
 
   return (
     <Card
@@ -55,7 +57,7 @@ function ApplicationCard({ app, onView, onWithdraw, withdrawingId }) {
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <Title level={5} style={{ margin: 0 }} ellipsis>{app.job_title}</Title>
-              <Text type="secondary" style={{ fontSize: 13 }}>{app.company}</Text>
+                <Text type="secondary" style={{ fontSize: 13 }}>{companyName}</Text>
             </div>
             <StatusBadge status={app.status} />
           </div>
@@ -85,17 +87,50 @@ function ApplicationCard({ app, onView, onWithdraw, withdrawingId }) {
 function MyApplications() {
   const navigate = useNavigate()
   const { message } = App.useApp()
+  const [applications, setApplications] = useState([])
+  const [withdrawingId, setWithdrawingId] = useState(null)
 
-  const { applications, loading, error, withdrawingId, fetchApplications, withdrawApplication } =
-    useApplications()
+  const {
+    execute: loadApplications,
+    loading,
+    error,
+  } = useApiCall(applicationService.getMyApplications)
+
+  const { execute: runWithdraw } = useApiCall(applicationService.withdrawApplication)
 
   const [statusFilter, setStatusFilter]   = useState('all')
   const [confirmOpen, setConfirmOpen]     = useState(false)
   const [selectedAppId, setSelectedAppId] = useState(null)
 
-  const filtered = statusFilter === 'all'
-    ? applications
-    : applications.filter((a) => a.status === statusFilter)
+  const fetchApplications = useCallback(async () => {
+    try {
+      const result = await loadApplications()
+      setApplications(Array.isArray(result?.data) ? result.data : [])
+    } catch {
+      setApplications([])
+    }
+  }, [loadApplications])
+
+  useEffect(() => {
+    fetchApplications()
+  }, [fetchApplications])
+
+  const withdrawApplication = useCallback(async (applicationId) => {
+    setWithdrawingId(applicationId)
+    try {
+      await runWithdraw(applicationId)
+      setApplications((prev) => prev.filter((app) => app.id !== applicationId))
+    } finally {
+      setWithdrawingId(null)
+    }
+  }, [runWithdraw])
+
+  const filtered = useMemo(
+    () => (statusFilter === 'all'
+      ? applications
+      : applications.filter((app) => app.status === statusFilter)),
+    [applications, statusFilter]
+  )
 
   const openWithdrawModal = useCallback((id) => {
     setSelectedAppId(id)

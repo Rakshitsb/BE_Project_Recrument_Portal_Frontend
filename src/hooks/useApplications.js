@@ -41,7 +41,12 @@ export function useApplications() {
   const loadJobs = useCallback(async () => {
     try {
       const result = await fetchJobs()
-      if (result) setJobs(result)
+      if (result) {
+        setJobs(result)
+        if (Array.isArray(result) && result.length > 0) {
+          setSelectedJobId((prev) => prev ?? result[0].id)
+        }
+      }
       return result
     } catch {
       return null

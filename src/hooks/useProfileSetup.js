@@ -37,13 +37,6 @@ function useProfileSetup(form) {
       try {
         const parsed = await profileService.uploadResume(file)
 
-        // Normalise skills: ensure it's always an array
-        const skills = Array.isArray(parsed.skills)
-          ? parsed.skills
-          : typeof parsed.skills === 'string'
-          ? parsed.skills.split(',').map((s) => s.trim())
-          : []
-
         const formData = {
           fullName:   parsed.full_name   || parsed.fullName   || '',
           email:      parsed.email       || '',
@@ -173,7 +166,7 @@ function useProfileSetup(form) {
         invalidateProfileCache()
 
         // ── Update user name in authStore ──
-        updateUser({ name: values.fullName })
+        updateUser({ name: values.fullName, profileCompleted: true })
 
         message.success('🎉 Profile created! Welcome to HireBase.')
 

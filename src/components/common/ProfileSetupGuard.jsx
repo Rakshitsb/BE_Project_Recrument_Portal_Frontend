@@ -1,15 +1,18 @@
-import { Outlet } from 'react-router-dom'
+import { Navigate, Outlet } from 'react-router-dom'
+import useAuthStore from '../../store/authStore'
 
 /**
  * ProfileSetupGuard
- * Previously redirected candidates to /profile-setup
- * if profileCompleted === false.
- *
- * Profile setup is now accessible via the candidate
- * profile page as an explicit user action.
- * This guard now simply renders child routes.
+ * Redirects candidates to profile setup if they
+ * have not yet completed their profile.
  */
 function ProfileSetupGuard() {
+  const { user } = useAuthStore()
+
+  if (user?.profileCompleted === false) {
+    return <Navigate to="/candidate/profile/setup" replace />
+  }
+
   return <Outlet />
 }
 

@@ -21,7 +21,7 @@ const { Text } = Typography
 // ── Menu configs per role ─────────────────────────────────────────
 const candidateMenuItems = [
   { key: '/candidate',              icon: <DashboardOutlined />, label: 'Dashboard' },
-  { key: '/jobs',                   icon: <SearchOutlined />,    label: 'Browse Jobs' },
+  { key: '/candidate/jobs',         icon: <SearchOutlined />,    label: 'Browse Jobs' },
   { key: '/candidate/applications', icon: <FileTextOutlined />,  label: 'My Applications' },
   { key: '/candidate/profile',      icon: <UserOutlined />,      label: 'My Profile' },
 ]
@@ -44,13 +44,17 @@ function MainLayout({ role }) {
   const { user, logout } = useAuth()
 
   const menuItems = role === 'hr' ? hrMenuItems : candidateMenuItems
+  const selectedMenuKey =
+    role === 'candidate' && (location.pathname === '/jobs' || location.pathname.startsWith('/candidate/jobs'))
+      ? '/candidate/jobs'
+      : location.pathname
 
   const userMenuItems = [
     {
       key:   'profile',
       icon:  <UserOutlined />,
       label: 'Profile',
-      ...(role === 'hr' ? { onClick: () => navigate('/hr/profile') } : {}),
+      onClick: () => navigate(role === 'hr' ? '/hr/profile' : '/candidate/profile'),
     },
     { type: 'divider' },
     {
@@ -81,7 +85,7 @@ function MainLayout({ role }) {
         <Menu
           mode="inline"
           theme="dark"
-          selectedKeys={[location.pathname]}
+          selectedKeys={[selectedMenuKey]}
           items={menuItems}
           onClick={({ key }) => navigate(key)}
           style={{ borderRight: 0, marginTop: 8 }}
