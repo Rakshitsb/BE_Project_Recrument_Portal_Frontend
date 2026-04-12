@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 
 import useAuthStore from '../store/authStore'
 import authService from '../services/authService'
+import { hrProfileService } from '../services'
 
 // ── Role → home route map ─────────────────────────────────────────────
 const ROLE_HOME = {
@@ -31,19 +32,17 @@ const parseApiError = (err) => {
  * ── Auth Flow Documentation ───────────────────────────────────
  *
  * REGISTER (new user):
- *   1. POST /auth/signup → { access_token, token_type, role }
- *   2. Build userData: { name, email, role, profileCompleted: false }
- *   3. storeLogin(userData, access_token)
- *   4. Navigate to /profile-setup (candidate) or /hr-profile-setup (hr)
- *   5. On setup complete: updateUser({ profileCompleted: true })
- *   6. Navigate to /candidate or /hr
+ *   1. POST /auth/signup
+ *   2. Show success message
+ *   3. Redirect to /login
+ *   4. Do not auto-login after registration
  *
  * LOGIN (returning user):
  *   1. POST /auth/login → { access_token, token_type, role }
- *   2. Build userData: { email, role, profileCompleted: true }
+ *   2. For HR users, GET /hr/profile to determine whether setup is complete
  *   3. storeLogin(userData, access_token)
- *   4. Navigate to /candidate, /hr, or /admin based on role
- *   5. Guards allow through (profileCompleted: true)
+ *   4. Navigate to /hr-profile-setup only when the HR profile does not exist
+ *   5. Otherwise navigate to role home
  *
  * LOGOUT:
  *   1. Clear Zustand store
@@ -86,18 +85,30 @@ function useAuth() {
     async (credentials) => {
       setLoading(true)
       try {
-        // authService.login returns { token, user: { email, role, profileCompleted } }
+        // authService.login returns { token, user: { email, role } }
         const { token, user } = await authService.login(credentials)
+        let profileCompleted = true
+
+        if (user.role === 'hr') {
+          const hrProfile = await hrProfileService.getProfile(token)
+          profileCompleted = Boolean(hrProfile)
+        }
 
         const userData = {
           email:            user.email,
           role:             user.role,
           name:             credentials.email.split('@')[0], // fallback display name
-          profileCompleted: user.profileCompleted,           // ?? true already applied in authService
+          profileCompleted,
         }
 
         storeLogin(userData, token)
         message.success('Welcome back!')
+
+        if (user.role === 'hr' && !profileCompleted) {
+          navigate('/hr-profile-setup', { replace: true })
+          return
+        }
+
         navigate(ROLE_HOME[user.role] ?? '/candidate', { replace: true })
       } catch (err) {
         message.error(parseApiError(err))
@@ -110,8 +121,7 @@ function useAuth() {
 
   /**
    * Register a new user (candidate or hr).
-   * Builds userData from payload fields + response role.
-   * Redirects to role-specific profile setup after registration.
+   * Shows a success message and redirects to login.
    *
    * @param {{ name: string, email: string, password: string, role: string }} payload
    */
@@ -119,34 +129,16 @@ function useAuth() {
     async (payload) => {
       setLoading(true)
       try {
-        // authService.register returns { token, user: { name, email, role, profileCompleted } }
-        const { token, user } = await authService.register(payload)
-
-        const userData = {
-          name:             user.name,
-          email:            user.email,
-          role:             user.role,
-          profileCompleted: false,  // new user — must complete setup
-        }
-
-        storeLogin(userData, token)
-        message.success('Account created successfully!')
-
-        // Redirect to profile setup based on role
-        if (user.role === 'candidate') {
-          navigate('/candidate/profile/setup', { replace: true })
-        } else if (user.role === 'hr') {
-          navigate('/hr-profile-setup', { replace: true })
-        } else {
-          navigate(ROLE_HOME[user.role] ?? '/candidate', { replace: true })
-        }
+        await authService.register(payload)
+        message.success('Account created successfully! Please sign in to continue.')
+        navigate('/login', { replace: true })
       } catch (err) {
         message.error(parseApiError(err))
       } finally {
         setLoading(false)
       }
     },
-    [storeLogin, navigate, message],
+    [navigate, message],
   )
 
   /**

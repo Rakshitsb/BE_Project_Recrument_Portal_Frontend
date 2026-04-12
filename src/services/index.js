@@ -10,3 +10,4 @@
 
 export { default as authService } from './authService'
 export { hrProfileService, jobService, applicationService } from './hrService'
+export { adminService } from './adminService'

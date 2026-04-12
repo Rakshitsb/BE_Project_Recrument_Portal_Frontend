@@ -42,8 +42,10 @@ export function HRProfileSetup() {
     try {
       setSubmitting(true)
 
-      const personalValues = await personalForm.validateFields()
       const companyValues  = await companyForm.validateFields()
+      const personalValues = Object.keys(formData).length > 0
+        ? formData
+        : personalForm.getFieldsValue(true)
       const payload = { ...personalValues, ...companyValues }
 
       await hrProfileService.createProfile(payload)
@@ -59,7 +61,9 @@ export function HRProfileSetup() {
         const detail = err.response?.data?.detail
         const msg = typeof detail === 'string'
           ? detail
-          : 'Failed to create profile. Please try again.'
+          : Array.isArray(detail)
+            ? detail.map((item) => item.msg).join(', ')
+            : 'Failed to create profile. Please try again.'
         message.error(msg)
       }
     } finally {

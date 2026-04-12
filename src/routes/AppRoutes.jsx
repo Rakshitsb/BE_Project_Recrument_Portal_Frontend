@@ -7,6 +7,7 @@ import { AdminLayout }      from '../layouts/AdminLayout'
 import ProtectedRoute       from '../components/common/ProtectedRoute'
 import ProfileSetupGuard    from '../components/common/ProfileSetupGuard'
 import HRSetupGuard         from '../components/common/HRSetupGuard'
+import HRProfileSetupOnlyGuard from '../components/common/HRProfileSetupOnlyGuard'
 
 // ── Lazy-loaded pages ─────────────────────────────────────────────
 const LoginPage     = lazy(() => import('../pages/auth/LoginPage'))
@@ -61,7 +62,9 @@ function AppRoutes() {
 
         {/* HR Profile Setup — hr role, no layout shell */}
         <Route element={<ProtectedRoute allowedRoles={['hr']} />}>
-          <Route path="/hr-profile-setup" element={<HRProfileSetup />} />
+          <Route element={<HRProfileSetupOnlyGuard />}>
+            <Route path="/hr-profile-setup" element={<HRProfileSetup />} />
+          </Route>
         </Route>
 
         {/* Candidate protected routes (also checks profile completion) */}
