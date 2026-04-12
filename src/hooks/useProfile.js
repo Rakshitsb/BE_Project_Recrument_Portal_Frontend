@@ -28,7 +28,15 @@ async function _fetchProfile() {
   _notify()
   try {
     const data = await profileService.getProfile()
-    _profile  = data
+
+    // If backend omits some fields (e.g., gender/dob/email), preserve last known values
+    _profile = {
+      ...(_profile || {}),
+      ...data,
+      gender: data.gender ?? _profile?.gender ?? null,
+      dob:    data.dob    ?? _profile?.dob    ?? null,
+      email:  data.email  ?? _profile?.email  ?? null,
+    }
     _error    = null
   } catch (err) {
     if (err.response?.status === 404) {

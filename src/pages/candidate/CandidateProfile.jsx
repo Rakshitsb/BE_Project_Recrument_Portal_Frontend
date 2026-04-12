@@ -1,4 +1,6 @@
 import { useNavigate } from 'react-router-dom'
+import dayjs from 'dayjs'
+import useAuthStore from '../../store/authStore'
 import {
   Row, Col, Card, Typography, Tag, Button,
   Avatar, Divider, Skeleton, Result, Space,
@@ -17,6 +19,9 @@ const { Title, Text } = Typography
 
 // ── Sub-component: top summary card ──────────────────────────────────────────
 function ProfileSummaryCard({ profile }) {
+  const joined = profile.created_at || profile.createdAt
+  const { user } = useAuthStore()
+  const email = profile.email || user?.email || 'Not provided'
   return (
     <Card className="card-shadow" style={{ marginBottom: 16 }}>
       <Row gutter={[24, 24]} align="middle">
@@ -38,10 +43,10 @@ function ProfileSummaryCard({ profile }) {
         <Col xs={24} sm={18}>
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
             {[
-              { icon: <MailOutlined />,        value: profile.email },
+              { icon: <MailOutlined />,        value: email },
               { icon: <PhoneOutlined />,        value: profile.phone },
               { icon: <EnvironmentOutlined />,  value: profile.location || 'Not specified' },
-              { icon: <CalendarOutlined />,     value: `Joined ${profile.created_at}` },
+              { icon: <CalendarOutlined />,     value: joined ? `Joined ${joined}` : 'Joined -' },
             ].map(({ icon, value }, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Text type="secondary">{icon}</Text>
@@ -57,6 +62,10 @@ function ProfileSummaryCard({ profile }) {
 
 // ── Sub-component: skills + education + account details ───────────────────────
 function ProfileDetailsSection({ profile }) {
+  const rawDob = profile.dob || profile.date_of_birth || profile.dateOfBirth || null
+  const formattedDob = rawDob ? dayjs(rawDob).format('DD MMM YYYY') : 'Not specified'
+  const memberSince = profile.created_at || profile.createdAt || 'Not specified'
+  const gender = profile.gender || profile.sex || profile.gender_identity || 'Not specified'
   return (
     <Row gutter={[16, 16]}>
       {/* Skills */}
@@ -106,9 +115,9 @@ function ProfileDetailsSection({ profile }) {
         <Card className="card-shadow">
           <Row gutter={[16, 16]}>
             {[
-              { label: 'Gender',        value: profile.gender || 'Not specified' },
-              { label: 'Date of Birth', value: profile.dob || 'Not specified' },
-              { label: 'Member Since',  value: profile.created_at },
+              { label: 'Gender',        value: gender },
+              { label: 'Date of Birth', value: formattedDob },
+              { label: 'Member Since',  value: memberSince },
             ].map(({ label, value }) => (
               <Col key={label} xs={24} sm={8}>
                 <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>{label}</Text>

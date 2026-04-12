@@ -60,12 +60,14 @@ function EditProfile() {
   useEffect(() => {
     if (!profile) return
     form.setFieldsValue({
-      full_name:        profile.full_name,
+      full_name:        profile.full_name || profile.fullName,
       email:            profile.email,
       phone:            profile.phone,
       location:         profile.location,
-      gender:           profile.gender,
-      dob:              profile.dob ? dayjs(profile.dob) : null,
+      gender:           profile.gender || profile.sex || profile.gender_identity,
+      dob:              profile.dob || profile.date_of_birth || profile.dateOfBirth
+                        ? dayjs(profile.dob || profile.date_of_birth || profile.dateOfBirth)
+                        : null,
       skills:           profile.skills,
       education:        profile.education,
       experience_years: profile.experience_years,
