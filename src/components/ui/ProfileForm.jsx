@@ -1,20 +1,20 @@
 import { memo } from 'react'
 import {
-  Form, Input, DatePicker, Select, Radio, Row, Col, Typography, Divider,
+  Form, Input, DatePicker, Select, Row, Col, Typography, Divider,
 } from 'antd'
 import {
   UserOutlined, MailOutlined, PhoneOutlined, TagsOutlined, EnvironmentOutlined,
 } from '@ant-design/icons'
 import DynamicListField from './DynamicListField'
 
-const { Text }     = Typography
+const { Text } = Typography
 const { TextArea } = Input
-const { Option }   = Select
+const { Option } = Select
 
 const GENDER_OPTIONS = [
-  { label: 'Male',              value: 'male' },
-  { label: 'Female',            value: 'female' },
-  { label: 'Non-binary',        value: 'non-binary' },
+  { label: 'Male', value: 'male' },
+  { label: 'Female', value: 'female' },
+  { label: 'Non-binary', value: 'non-binary' },
   { label: 'Prefer not to say', value: 'prefer-not-to-say' },
 ]
 
@@ -24,12 +24,6 @@ const SKILL_OPTIONS = [
   'AWS', 'Docker', 'Figma', 'SQL', 'MongoDB',
 ]
 
-const ACCOUNT_TYPES = [
-  { label: '👤  Job Seeker / Candidate', value: 'candidate' },
-  { label: '🧑‍💼  HR / Employer',          value: 'hr' },
-]
-
-// ── Education entry field config ──────────────────────────────────────────────
 const EDUCATION_FIELDS = [
   {
     name: 'degree',
@@ -48,12 +42,11 @@ const EDUCATION_FIELDS = [
   {
     name: 'year',
     label: 'Year',
-    placeholder: 'e.g. 2022–2026',
+    placeholder: 'e.g. 2022-2026',
     span: 8,
   },
 ]
 
-// ── Experience entry field config ─────────────────────────────────────────────
 const EXPERIENCE_FIELDS = [
   {
     name: 'title',
@@ -71,7 +64,7 @@ const EXPERIENCE_FIELDS = [
   {
     name: 'duration',
     label: 'Duration',
-    placeholder: 'e.g. Jan 2023 – Mar 2024',
+    placeholder: 'e.g. Jan 2023 - Mar 2024',
     span: 12,
   },
   {
@@ -84,7 +77,6 @@ const EXPERIENCE_FIELDS = [
   },
 ]
 
-// ── Project entry field config ────────────────────────────────────────────────
 const PROJECT_FIELDS = [
   {
     name: 'name',
@@ -122,23 +114,11 @@ const sectionLabel = (text) => (
 
 /**
  * ProfileForm
- * Renders only Form.Items — does NOT wrap in its own <Form>.
- * The parent ProfileSetup owns the <Form> and form instance,
- * so onFinish fires correctly on submit.
- *
- * Sections:
- *  - Personal Details (name, email, phone, dob, gender, location)
- *  - Skills
- *  - Education (dynamic list — degree, institution, year)
- *  - Work Experience (dynamic list — title, company, duration, description)
- *  - Projects (dynamic list — name, description)
- *  - Bio
- *  - Account Type
+ * Renders only Form.Items; parent ProfileSetup owns the <Form>.
  */
 const ProfileForm = memo(function ProfileForm() {
   return (
     <>
-      {/* ── Personal Details ─────────────────────────────────────── */}
       {sectionLabel('Personal Details')}
 
       <Row gutter={[16, 0]}>
@@ -200,7 +180,6 @@ const ProfileForm = memo(function ProfileForm() {
 
       <Divider style={{ margin: '8px 0 20px' }} />
 
-      {/* ── Skills ────────────────────────────────────────────────── */}
       {sectionLabel('Skills')}
 
       <Form.Item
@@ -221,7 +200,6 @@ const ProfileForm = memo(function ProfileForm() {
 
       <Divider style={{ margin: '8px 0 20px' }} />
 
-      {/* ── Education ─────────────────────────────────────────────── */}
       <DynamicListField
         name="education"
         label="Education"
@@ -233,7 +211,6 @@ const ProfileForm = memo(function ProfileForm() {
 
       <Divider style={{ margin: '0 0 20px' }} />
 
-      {/* ── Work Experience ───────────────────────────────────────── */}
       <DynamicListField
         name="experience"
         label="Work Experience"
@@ -245,7 +222,6 @@ const ProfileForm = memo(function ProfileForm() {
 
       <Divider style={{ margin: '0 0 20px' }} />
 
-      {/* ── Projects ──────────────────────────────────────────────── */}
       <DynamicListField
         name="projects"
         label="Projects"
@@ -257,7 +233,6 @@ const ProfileForm = memo(function ProfileForm() {
 
       <Divider style={{ margin: '0 0 20px' }} />
 
-      {/* ── Bio ───────────────────────────────────────────────────── */}
       {sectionLabel('Bio')}
 
       <Form.Item name="bio">
@@ -267,36 +242,6 @@ const ProfileForm = memo(function ProfileForm() {
           showCount
           maxLength={1000}
         />
-      </Form.Item>
-
-      <Divider style={{ margin: '8px 0 20px' }} />
-
-      {/* ── Account Type ──────────────────────────────────────────── */}
-      {sectionLabel('Account Type')}
-
-      <Form.Item name="accountType" rules={[{ required: true }]}>
-        <Radio.Group style={{ width: '100%' }}>
-          <Row gutter={[12, 12]}>
-            {ACCOUNT_TYPES.map((type) => (
-              <Col xs={24} sm={12} key={type.value}>
-                <Radio.Button
-                  value={type.value}
-                  style={{
-                    width: '100%',
-                    height: 'auto',
-                    padding: '12px 16px',
-                    borderRadius: 8,
-                    textAlign: 'center',
-                    lineHeight: 1.5,
-                    whiteSpace: 'normal',
-                  }}
-                >
-                  {type.label}
-                </Radio.Button>
-              </Col>
-            ))}
-          </Row>
-        </Radio.Group>
       </Form.Item>
     </>
   )

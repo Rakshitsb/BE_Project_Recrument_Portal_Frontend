@@ -185,16 +185,10 @@ export const profileService = {
    */
   updateProfile: async (profileData) => {
     try {
-      const dob = profileData.dob || profileData.date_of_birth || null
-
       const payload = {
         full_name:        profileData.full_name  || profileData.fullName  || '',
-        email:            profileData.email      || profileData.user_email || null,
         phone:            profileData.phone      || '',
         location:         profileData.location   || '',
-        gender:           profileData.gender     || null,
-        dob,
-        date_of_birth:    dob,
         skills:           profileData.skills     || [],
         experience_years: parseFloat(profileData.experience_years)
                           || parseFloat(profileData.experienceYears)
@@ -209,14 +203,14 @@ export const profileService = {
       }
 
       const { data } = await api.put('/candidate/profile', payload)
-      const normalizedDob = data.dob || data.date_of_birth || data.dateOfBirth || dob
-      const normalizedGender = data.gender ?? data.sex ?? payload.gender ?? profileData.gender ?? null
-      const normalizedEmail = data.email || data.user_email || payload.email || profileData.email || null
+      const normalizedDob = data.dob || data.date_of_birth || data.dateOfBirth || profileData.dob || profileData.date_of_birth || null
+      const normalizedGender = data.gender ?? data.sex ?? profileData.gender ?? null
+      const normalizedEmail = data.email || data.user_email || profileData.email || profileData.user_email || null
       return {
         ...data,
-        fullName:        data.full_name,
-        experienceYears: data.experience_years,
-        resumeUrl:       data.resume_url,
+        fullName:        data.full_name || payload.full_name,
+        experienceYears: data.experience_years ?? payload.experience_years,
+        resumeUrl:       data.resume_url ?? payload.resume_url,
         avatarUrl:       data.avatar_url,
         createdAt:       data.created_at,
         dob:             normalizedDob,

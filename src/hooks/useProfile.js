@@ -55,7 +55,13 @@ async function _fetchProfile() {
 /** Global update — patches singleton + notifies all instances */
 async function _updateProfile(formData) {
   const updatedData = await profileService.updateProfile(formData)
-  _profile = updatedData
+  _profile = {
+    ...(_profile || {}),
+    ...updatedData,
+    email:  updatedData.email  ?? formData.email ?? _profile?.email ?? null,
+    gender: updatedData.gender ?? formData.gender ?? _profile?.gender ?? null,
+    dob:    updatedData.dob    ?? formData.dob ?? _profile?.dob ?? null,
+  }
   _error   = null
   _notify()
   return updatedData

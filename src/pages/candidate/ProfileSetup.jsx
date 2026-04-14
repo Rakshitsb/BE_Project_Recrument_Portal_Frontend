@@ -118,7 +118,6 @@ function ProfileSetup() {
           size="large"
           onFinish={handleSubmit}
           onFinishFailed={onFinishFailed}
-          initialValues={{ accountType: 'candidate' }}
         >
           <ProfileForm />
 

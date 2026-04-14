@@ -83,7 +83,7 @@ function useProfileSetup(form) {
         // new array data after the form is already mounted.
         // Calling setFieldsValue alone does NOT update Form.List items.
         form.resetFields()
-        form.setFieldsValue({ accountType: 'candidate', ...formData })
+        form.setFieldsValue(formData)
         setResumeParsed(true)
         message.success('✅ Resume parsed successfully! Please review and edit your details.')
       } catch (err) {
