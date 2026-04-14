@@ -1,5 +1,11 @@
 import api from './api'
 
+const normalizeWebsite = (website) => {
+  if (!website) return null
+  if (/^https?:\/\//i.test(website)) return website
+  return `https://${website}`
+}
+
 // ── Field mappers ─────────────────────────────────────────────────────────
 
 /**
@@ -9,11 +15,11 @@ import api from './api'
  * @returns {object}
  */
 const toBackendProfile = (values) => ({
-  full_name:        values.name || values.full_name,
+  full_name:        values.fullName || values.name || values.full_name,
   phone:            values.phone,
   designation:      values.designation,
-  company_name:     values.company || values.company_name,
-  company_website:  values.companyWebsite || values.company_website || null,
+  company_name:     values.companyName || values.company || values.company_name,
+  company_website:  normalizeWebsite(values.companyWebsite || values.company_website),
   company_location: values.companyLocation || values.company_location,
   industry:         values.industry,
   company_size:     values.companySize || values.company_size,
@@ -113,9 +119,12 @@ const hrProfileService = {
    * GET /hr/profile
    * @returns {Promise<object>} camelCase profile object
    */
-  getProfile: async () => {
+  getProfile: async (token) => {
     try {
-      const { data } = await api.get('/hr/profile')
+      const config = token
+        ? { headers: { Authorization: `Bearer ${token}` } }
+        : undefined
+      const { data } = await api.get('/hr/profile', config)
       return fromBackendProfile(data)
     } catch (err) {
       if (err.response?.status === 404) {

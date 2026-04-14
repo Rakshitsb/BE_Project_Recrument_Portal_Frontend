@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import useAuthStore from '../../store/authStore'
 
 /**
@@ -8,8 +8,10 @@ import useAuthStore from '../../store/authStore'
  */
 function ProfileSetupGuard() {
   const { user } = useAuthStore()
+  const location = useLocation()
 
-  if (user?.profileCompleted === false) {
+  // Allow the setup page itself; redirect only when on other candidate pages
+  if (user?.profileCompleted === false && location.pathname !== '/candidate/profile/setup') {
     return <Navigate to="/candidate/profile/setup" replace />
   }
 

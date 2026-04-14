@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   App,
@@ -12,6 +12,7 @@ import {
   Skeleton,
   Tag,
   Typography,
+  Space,
 } from 'antd'
 import {
   ArrowLeftOutlined,
@@ -26,6 +27,7 @@ import StatusBadge from '../../components/ui/StatusBadge'
 import useApiCall from '../../hooks/useApiCall'
 import { getJobById } from '../../services/jobService'
 import applicationService from '../../services/applicationService'
+import aiService from '../../services/aiService'
 
 const { Title, Text, Paragraph } = Typography
 const { TextArea } = Input
@@ -119,14 +121,27 @@ function JobDetailInfo({ job }) {
   )
 }
 
-function ApplyCard({ job }) {
+function ApplyCard({ job, hasApplied }) {
   const navigate = useNavigate()
   const { message } = App.useApp()
   const { execute: submitApplication } = useApiCall(applicationService.applyToJob)
+  const { execute: generateCover } = useApiCall(aiService.generateCoverLetter)
 
   const [coverLetter, setCoverLetter] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [applied, setApplied] = useState(false)
+  const [applied, setApplied] = useState(hasApplied)
+  const [generating, setGenerating] = useState(false)
+
+  const clampToWordLimit = useCallback((text) => {
+    const words = text.trim().split(/\s+/).filter(Boolean)
+    if (words.length <= 1000) return text
+    return `${words.slice(0, 1000).join(' ')} …`
+  }, [])
+
+  // Keep local state in sync when hasApplied prop changes (e.g., after fetch)
+  useEffect(() => {
+    setApplied(hasApplied)
+  }, [hasApplied])
 
   const handleSubmit = async () => {
     try {
@@ -134,10 +149,29 @@ function ApplyCard({ job }) {
       await submitApplication({ job_id: job.id, cover_letter: coverLetter })
       setApplied(true)
       message.success('Application submitted successfully!')
-    } catch {
-      message.error('Failed to submit application')
+    } catch (err) {
+      if (err?.response?.status === 409) {
+        // Backend signals duplicate application
+        setApplied(true)
+        message.info('You already applied to this job.')
+      } else {
+        message.error('Failed to submit application')
+      }
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleGenerate = async () => {
+    try {
+      setGenerating(true)
+      const text = await generateCover(job.id)
+      setCoverLetter(clampToWordLimit(text || ''))
+      message.success('AI cover letter generated')
+    } catch {
+      message.error('Failed to generate cover letter')
+    } finally {
+      setGenerating(false)
     }
   }
 
@@ -165,9 +199,31 @@ function ApplyCard({ job }) {
             showCount
             placeholder="Tell us why you're a great fit for this role..."
             value={coverLetter}
-            onChange={(event) => setCoverLetter(event.target.value)}
+            onChange={(event) => setCoverLetter(clampToWordLimit(event.target.value))}
             disabled={applied}
+            style={{ marginBottom: 8 }}
           />
+          <Space
+            style={{
+              width: '100%',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginTop: 6,
+            }}
+          >
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              Max 1000 words • You can edit after generating
+            </Text>
+            <Button
+              type="primary"
+              size="small"
+              onClick={handleGenerate}
+              loading={generating}
+              disabled={applied}
+            >
+              {generating ? 'Generating…' : '✨ Generate with AI'}
+            </Button>
+          </Space>
         </div>
       )}
 
@@ -187,6 +243,7 @@ function ApplyCard({ job }) {
           icon={<SendOutlined />}
           loading={submitting}
           onClick={handleSubmit}
+          disabled={applied}
         >
           Submit Application
         </Button>
@@ -215,12 +272,34 @@ function JobDetailPage() {
     error,
     data: job,
   } = useApiCall(getJobById)
+  const {
+    execute: loadMyApplications,
+    data: myApplications,
+  } = useApiCall(applicationService.getMyApplications)
+  const [hasApplied, setHasApplied] = useState(false)
 
   useEffect(() => {
     if (jobId) {
       loadJob(jobId)
+      loadMyApplications()
     }
-  }, [jobId, loadJob])
+  }, [jobId, loadJob, loadMyApplications])
+
+  // When either job or applications change, compute applied status
+  useEffect(() => {
+    if (!job) return
+
+    // Prefer backend field if provided
+    if (job.hasApplied === true) {
+      setHasApplied(true)
+      return
+    }
+
+    if (Array.isArray(myApplications?.data)) {
+      const applied = myApplications.data.some((app) => String(app.job_id) === String(job.id))
+      setHasApplied(applied)
+    }
+  }, [job, myApplications])
 
   return (
     <App>
@@ -254,7 +333,7 @@ function JobDetailPage() {
             </div>
 
             <div style={{ gridColumn: 'span 1' }}>
-              <ApplyCard job={job} />
+              <ApplyCard job={job} hasApplied={hasApplied} />
             </div>
           </div>
         )}
