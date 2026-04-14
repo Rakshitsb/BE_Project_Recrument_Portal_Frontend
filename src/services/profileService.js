@@ -136,9 +136,12 @@ export const profileService = {
   /**
    * Fetch the current candidate's profile.
    */
-  getProfile: async () => {
+  getProfile: async (token) => {
     try {
-      const { data } = await api.get('/candidate/profile')
+      const config = token
+        ? { headers: { Authorization: `Bearer ${token}` } }
+        : undefined
+      const { data } = await api.get('/candidate/profile', config)
       const dob = data.dob || data.date_of_birth || data.dateOfBirth || null
       const email = data.email || data.user_email || data.user?.email || null
       const gender = data.gender ?? data.sex ?? data.gender_identity ?? null

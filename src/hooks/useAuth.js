@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
 import authService from '../services/authService'
 import { hrProfileService } from '../services'
+import profileService from '../services/profileService'
 
 // ── Role → home route map ─────────────────────────────────────────────
 const ROLE_HOME = {
@@ -94,6 +95,19 @@ function useAuth() {
           profileCompleted = Boolean(hrProfile)
         }
 
+        if (user.role === 'candidate') {
+          try {
+            const candidateProfile = await profileService.getProfile(token)
+            profileCompleted = Boolean(candidateProfile)
+          } catch (err) {
+            if (err.response?.status === 404) {
+              profileCompleted = false
+            } else {
+              throw err
+            }
+          }
+        }
+
         const userData = {
           email:            user.email,
           role:             user.role,
@@ -106,6 +120,12 @@ function useAuth() {
 
         if (user.role === 'hr' && !profileCompleted) {
           navigate('/hr-profile-setup', { replace: true })
+          return
+        }
+
+        if (user.role === 'candidate' && !profileCompleted) {
+          message.warning('Please complete your profile first to proceed.')
+          navigate('/candidate/profile/setup', { replace: true })
           return
         }
 
