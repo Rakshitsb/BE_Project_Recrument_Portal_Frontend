@@ -99,18 +99,21 @@ export const profileService = {
       const dob = profileData.dob || profileData.date_of_birth || null
 
       const payload = {
-        full_name:        profileData.fullName   || profileData.full_name || '',
-        email:            profileData.email      || null,
-        phone:            profileData.phone      || '',
-        location:         profileData.location   || '',
-        skills:           profileData.skills     || [],
+        full_name:        profileData.fullName        || profileData.full_name || '',
+        email:            profileData.email           || null,
+        phone:            profileData.phone           || '',
+        location:         profileData.location        || '',
+        skills:           profileData.skills          || [],
         experience_years: parseFloat(profileData.experience_years)
                           || parseFloat(profileData.experience)
                           || 0,
-        education:        profileData.education  || '',
-        resume_url:       profileData.resumeUrl  || null,
-        bio:              profileData.bio        || null,
-        gender:           profileData.gender     || null,
+        // Pass structured arrays directly (backend accepts both array and string)
+        education:        profileData.education       ?? [],
+        experience:       profileData.experience      ?? [],
+        projects:         profileData.projects        ?? [],
+        resume_url:       profileData.resumeUrl       || null,
+        bio:              profileData.bio             || null,
+        gender:           profileData.gender          || null,
         dob,
         date_of_birth:    dob,
       }
@@ -196,7 +199,9 @@ export const profileService = {
         experience_years: parseFloat(profileData.experience_years)
                           || parseFloat(profileData.experienceYears)
                           || 0,
-        education:        profileData.education  || '',
+        education:        profileData.education  ?? [],
+        experience:       profileData.experience ?? [],
+        projects:         profileData.projects   ?? [],
         bio:              profileData.bio        || null,
         resume_url:       profileData.resume_url
                           || profileData.resumeUrl

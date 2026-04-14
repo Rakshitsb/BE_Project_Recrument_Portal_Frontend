@@ -122,45 +122,27 @@ function useProfileSetup(form) {
     async (values) => {
       setSubmitting(true)
       try {
-        // ── Serialize education array → readable string for backend ──
-        const educationStr = Array.isArray(values.education)
-          ? values.education
-              .filter((e) => e?.degree)
-              .map((e) => [
-                  e.degree,
-                  e.institution && `at ${e.institution}`,
-                  e.year        && `(${e.year})`,
-                ].filter(Boolean).join(' '))
-              .join(' | ')
-          : values.education || ''
-
-        // ── Serialize experience array → readable string for backend ──
-        const experienceStr = Array.isArray(values.experience)
-          ? values.experience
-              .filter((e) => e?.title)
-              .map((e) => [
-                  e.title,
-                  e.company  && `at ${e.company}`,
-                  e.duration && `(${e.duration})`,
-                  e.description,
-                ].filter(Boolean).join(' — '))
-              .join(' | ')
-          : values.experience || ''
-
         const payload = {
-          fullName:  values.fullName   || '',
-          email:     values.email      || '',
-          phone:     values.phone      || '',
-          location:  values.location   || '',
-          skills:    values.skills     || [],
-          education: educationStr,
-          experience: experienceStr,
-          bio:       values.bio        || null,
-          resumeUrl: profileData.avatarUrl || null,
-          dob:       values.dob
-                     ? values.dob.format('YYYY-MM-DD')
-                     : null,
-          gender:    values.gender     || null,
+          fullName:         values.fullName         || '',
+          email:            values.email            || '',
+          phone:            values.phone            || '',
+          location:         values.location         || '',
+          skills:           values.skills           || [],
+          experience_years: parseFloat(values.experience_years) || 0,
+          // Pass structured arrays directly — backend now accepts them
+          education:        Array.isArray(values.education)
+                              ? values.education
+                              : values.education
+                                ? [{ degree: values.education }]
+                                : [],
+          experience:       Array.isArray(values.experience) ? values.experience : [],
+          projects:         Array.isArray(values.projects)   ? values.projects   : [],
+          bio:              values.bio              || null,
+          resumeUrl:        profileData.avatarUrl   || null,
+          dob:              values.dob
+                              ? values.dob.format('YYYY-MM-DD')
+                              : null,
+          gender:           values.gender           || null,
         }
 
         await profileService.saveProfile(payload)

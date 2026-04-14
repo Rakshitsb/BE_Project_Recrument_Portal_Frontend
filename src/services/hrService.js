@@ -103,7 +103,9 @@ const fromBackendApplication = (data) => ({
   location:        data.location        || '—',
   skills:          data.skills          || [],
   experienceYears: data.experience_years ?? '—',
-  education:       data.education       || '—',
+  education:       Array.isArray(data.education)
+                     ? data.education.map((e) => [e.degree, e.institution, e.year].filter(Boolean).join(', ')).join(' | ')
+                     : data.education || '—',
   coverLetter:     data.cover_letter    || '',
   status:          data.status,
   appliedDate:     data.created_at?.split('T')[0] || '—',

@@ -60,12 +60,26 @@ function ProfileSummaryCard({ profile }) {
   )
 }
 
-// ── Sub-component: skills + education + account details ───────────────────────
+// ── Sub-component: skills + education + experience + projects ─────────────────
 function ProfileDetailsSection({ profile }) {
   const rawDob = profile.dob || profile.date_of_birth || profile.dateOfBirth || null
   const formattedDob = rawDob ? dayjs(rawDob).format('DD MMM YYYY') : 'Not specified'
   const memberSince = profile.created_at || profile.createdAt || 'Not specified'
   const gender = profile.gender || profile.sex || profile.gender_identity || 'Not specified'
+
+  // Normalise education — backend may return an array or a legacy string
+  const educationList = Array.isArray(profile.education)
+    ? profile.education
+    : profile.education
+    ? [{ degree: profile.education, institution: '', year: '' }]
+    : []
+
+  // Normalise experience array
+  const experienceList = Array.isArray(profile.experience) ? profile.experience : []
+
+  // Normalise projects array
+  const projectsList = Array.isArray(profile.projects) ? profile.projects : []
+
   return (
     <Row gutter={[16, 16]}>
       {/* Skills */}
@@ -87,19 +101,39 @@ function ProfileDetailsSection({ profile }) {
         </Card>
       </Col>
 
-      {/* Education & Experience */}
+      {/* Education */}
       <Col xs={24} md={12}>
         <Card className="card-shadow" style={{ height: '100%' }}>
           <Title level={5}>
             <BookOutlined style={{ marginRight: 8, color: '#1677ff' }} />
             Education
           </Title>
-          <Text>{profile.education || 'Not specified'}</Text>
+          {educationList.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {educationList.map((ed, i) => (
+                <div key={i}>
+                  <Text strong>{ed.degree}</Text>
+                  {ed.institution && (
+                    <Text type="secondary" style={{ display: 'block', fontSize: 13 }}>
+                      {ed.institution}
+                    </Text>
+                  )}
+                  {ed.year && (
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {ed.year}
+                    </Text>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <Text type="secondary">Not specified</Text>
+          )}
 
           <Divider style={{ margin: '12px 0' }} />
 
           <Title level={5} style={{ marginBottom: 4 }}>Experience</Title>
-          <Text>{profile.experience_years} years</Text>
+          <Text>{profile.experience_years} year{profile.experience_years !== 1 ? 's' : ''}</Text>
 
           {profile.bio && (
             <>
@@ -109,6 +143,62 @@ function ProfileDetailsSection({ profile }) {
           )}
         </Card>
       </Col>
+
+      {/* Work Experience */}
+      {experienceList.length > 0 && (
+        <Col xs={24}>
+          <Card className="card-shadow">
+            <Title level={5}>
+              <RocketOutlined style={{ marginRight: 8, color: '#52c41a' }} />
+              Work Experience
+            </Title>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {experienceList.map((exp, i) => (
+                <div key={i} style={{ borderLeft: '3px solid #1677ff', paddingLeft: 12 }}>
+                  <Text strong>{exp.title || exp.role}</Text>
+                  {exp.company && (
+                    <Text type="secondary" style={{ display: 'block', fontSize: 13 }}>
+                      {exp.company}
+                    </Text>
+                  )}
+                  {exp.duration && (
+                    <Text type="secondary" style={{ fontSize: 12 }}>{exp.duration}</Text>
+                  )}
+                  {exp.description && (
+                    <Text style={{ display: 'block', marginTop: 4, fontSize: 13 }}>
+                      {exp.description}
+                    </Text>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card>
+        </Col>
+      )}
+
+      {/* Projects */}
+      {projectsList.length > 0 && (
+        <Col xs={24}>
+          <Card className="card-shadow">
+            <Title level={5}>
+              <TrophyOutlined style={{ marginRight: 8, color: '#722ed1' }} />
+              Projects
+            </Title>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {projectsList.map((proj, i) => (
+                <div key={i} style={{ borderLeft: '3px solid #722ed1', paddingLeft: 12 }}>
+                  <Text strong>{proj.name}</Text>
+                  {proj.description && (
+                    <Text style={{ display: 'block', marginTop: 4, fontSize: 13 }}>
+                      {proj.description}
+                    </Text>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card>
+        </Col>
+      )}
 
       {/* Account info */}
       <Col xs={24}>
@@ -130,6 +220,7 @@ function ProfileDetailsSection({ profile }) {
     </Row>
   )
 }
+
 
 // ── Main page component ───────────────────────────────────────────────────────
 function CandidateProfile() {

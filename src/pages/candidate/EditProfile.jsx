@@ -59,6 +59,12 @@ function EditProfile() {
   // Pre-fill form when profile data loads
   useEffect(() => {
     if (!profile) return
+    // Normalize education: array → readable string for the plain textarea
+    const rawEd = profile.education
+    const educationStr = Array.isArray(rawEd)
+      ? rawEd.map((e) => [e.degree, e.institution, e.year].filter(Boolean).join(', ')).join(' | ')
+      : rawEd || ''
+
     form.setFieldsValue({
       full_name:        profile.full_name || profile.fullName,
       email:            profile.email,
@@ -69,7 +75,7 @@ function EditProfile() {
                         ? dayjs(profile.dob || profile.date_of_birth || profile.dateOfBirth)
                         : null,
       skills:           profile.skills,
-      education:        profile.education,
+      education:        educationStr,
       experience_years: profile.experience_years,
       bio:              profile.bio,
     })
@@ -89,7 +95,11 @@ function EditProfile() {
                           : null,
         skills:           values.skills            || [],
         experience_years: parseFloat(values.experience_years) || 0,
-        education:        values.education         || '',
+        education:        typeof values.education === 'string'
+                          ? values.education
+                          : Array.isArray(values.education)
+                            ? values.education.map((e) => [e.degree, e.institution, e.year].filter(Boolean).join(', ')).join(' | ')
+                            : '',
         bio:              values.bio               || null,
         resume_url:       null,
       }

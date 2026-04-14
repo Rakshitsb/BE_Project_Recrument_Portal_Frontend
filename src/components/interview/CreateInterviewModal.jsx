@@ -13,9 +13,10 @@ function buildCandidateAwareContext(application) {
     const experience = application.experienceYears && application.experienceYears !== '—'
         ? `${application.experienceYears} years`
         : 'Not provided';
-    const education = application.education && application.education !== '—'
-        ? application.education
-        : 'Not provided';
+    const rawEd = application.education;
+    const education = Array.isArray(rawEd)
+        ? rawEd.map((e) => [e.degree, e.institution, e.year].filter(Boolean).join(', ')).join(' | ')
+        : rawEd && rawEd !== '—' ? rawEd : 'Not provided';
     const location = application.location && application.location !== '—'
         ? application.location
         : 'Not provided';

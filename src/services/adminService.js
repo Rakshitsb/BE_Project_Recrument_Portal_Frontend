@@ -15,7 +15,9 @@ const fromBackendCandidate = (data) => ({
   location:        data.location || '—',
   skills:          data.skills || [],
   experienceYears: data.experience_years ?? 0,
-  education:       data.education || '—',
+  education:       Array.isArray(data.education)
+                     ? data.education.map((e) => [e.degree, e.institution, e.year].filter(Boolean).join(', ')).join(' | ')
+                     : data.education || '—',
   bio:             data.bio || '',
   joinedDate:      data.created_at?.split('T')[0] || '—',
 })
