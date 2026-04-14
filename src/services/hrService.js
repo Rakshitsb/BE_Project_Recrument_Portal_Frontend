@@ -159,8 +159,17 @@ const jobService = {
    * @returns {Promise<object[]>} array of camelCase job objects
    */
   getMyJobs: async () => {
-    const { data } = await api.get('/jobs/')
-    return Array.isArray(data) ? data.map(fromBackendJob) : []
+    try {
+      const { data: profile } = await api.get('/hr/profile')
+      const hrId = profile.user_id
+
+      const { data } = await api.get('/jobs/')
+      const allJobs = Array.isArray(data) ? data.map(fromBackendJob) : []
+      return allJobs.filter(job => job.hrId === hrId)
+    } catch (err) {
+      if (err.response?.status === 404) return []
+      throw err
+    }
   },
 
   /**
@@ -222,6 +231,26 @@ const applicationService = {
   getJobApplications: async (jobId) => {
     const { data } = await api.get(`/applications/job/${jobId}`)
     return Array.isArray(data) ? data.map(fromBackendApplication) : []
+  },
+
+  /**
+   * Find a single application across the HR user's jobs.
+   * Useful for deep-linking to a candidate review page.
+   * @param {string} applicationId
+   * @returns {Promise<object|null>}
+   */
+  getApplicationById: async (applicationId) => {
+    const jobs = await jobService.getMyJobs()
+    const applicationLists = await Promise.all(
+      (jobs || []).map((job) => applicationService.getJobApplications(job.id))
+    )
+
+    for (const apps of applicationLists) {
+      const match = (apps || []).find((app) => app.id === applicationId)
+      if (match) return match
+    }
+
+    return null
   },
 
   /**

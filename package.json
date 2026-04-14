@@ -14,9 +14,11 @@
     "antd": "^6.3.4",
     "axios": "^1.14.0",
     "dayjs": "^1.11.20",
+    "i": "^0.3.7",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.13.2",
+    "retell-client-js-sdk": "^2.0.7",
     "zustand": "^5.0.12"
   },
   "devDependencies": {

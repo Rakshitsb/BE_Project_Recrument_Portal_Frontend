@@ -78,6 +78,19 @@ export function useApplications() {
     loadApplications(selectedJobId)
   }, [loadApplications, selectedJobId])
 
+  // Re-fetch when the user comes back to this tab (e.g. after reviewing interview analytics).
+  // This ensures the status column reflects any changes made in the interview analytics
+  // (like "rejected") without requiring a manual page reload.
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && selectedJobId) {
+        loadApplications(selectedJobId)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [selectedJobId, loadApplications])
+
   const filteredApps = useMemo(
     () => applications.filter((app) => !selectedStatus || app.status === selectedStatus),
     [applications, selectedStatus],

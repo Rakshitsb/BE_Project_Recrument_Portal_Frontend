@@ -14,6 +14,9 @@ const RegisterPage  = lazy(() => import('../pages/auth/RegisterPage'))
 const ProfileSetup  = lazy(() => import('../pages/candidate/ProfileSetup'))
 
 // Candidate pages
+import InterviewTakePage from '../pages/candidate/InterviewTakePage'
+import InterviewResultsPage from '../pages/candidate/InterviewResultsPage'
+
 const CandidateDashboard = lazy(() => import('../pages/candidate/CandidateDashboard'))
 const JobsPage           = lazy(() => import('../pages/candidate/Jobs'))
 const MyApplications     = lazy(() => import('../pages/candidate/MyApplications'))
@@ -25,8 +28,12 @@ const EditProfile        = lazy(() => import('../pages/candidate/EditProfile'))
 const HRDashboard    = lazy(() => import('../pages/hr/HRDashboard'))
 const ManageJobs     = lazy(() => import('../pages/hr/ManageJobs'))
 const Applications   = lazy(() => import('../pages/hr/Applications').then(m => ({ default: m.Applications })))
+const ApplicationDetail = lazy(() => import('../pages/hr/ApplicationDetail'))
 const HRProfileSetup = lazy(() => import('../pages/hr/HRProfileSetup'))
 const HRProfile      = lazy(() => import('../pages/hr/HRProfile').then(m => ({ default: m.HRProfile })))
+const Interviewers   = lazy(() => import('../pages/hr/Interviewers').then(m => ({ default: m.Interviewers })))
+const Interviews     = lazy(() => import('../pages/hr/Interviews').then(m => ({ default: m.Interviews })))
+const InterviewDetail = lazy(() => import('../pages/hr/InterviewDetail').then(m => ({ default: m.InterviewDetail })))
 
 // Misc pages
 const NotFound = lazy(() => import('../pages/NotFound').then(m => ({ default: m.NotFound })))
@@ -88,7 +95,11 @@ function AppRoutes() {
               <Route path="/hr"                  element={<HRDashboard />} />
               <Route path="/hr/jobs"             element={<ManageJobs />} />
               <Route path="/hr/applications"     element={<Applications />} />
+              <Route path="/hr/applications/:applicationId" element={<ApplicationDetail />} />
               <Route path="/hr/profile"          element={<HRProfile />} />
+              <Route path="/hr/interviewers"     element={<Interviewers />} />
+              <Route path="/hr/interviews"       element={<Interviews />} />
+              <Route path="/hr/interviews/:interviewId" element={<InterviewDetail />} />
             </Route>
           </Route>
         </Route>
@@ -102,6 +113,11 @@ function AppRoutes() {
             <Route path="/admin/applications"       element={<AdminApplications />} />
           </Route>
         </Route>
+
+        
+        {/* Candidate Standalone Interview Routes */}
+        <Route path="/interview/:token" element={<InterviewTakePage />} />
+        <Route path="/interview/:token/results" element={<InterviewResultsPage />} />
 
         {/* Default redirect + 404 */}
         <Route path="/"  element={<Navigate to="/login" replace />} />

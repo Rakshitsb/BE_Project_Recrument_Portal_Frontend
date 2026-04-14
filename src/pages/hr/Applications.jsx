@@ -1,5 +1,6 @@
-import { Alert, Button, Col, Drawer, Result, Row, Skeleton, Tag } from 'antd'
-import { SolutionOutlined, UserOutlined }                          from '@ant-design/icons'
+import { Alert, Button, Col, Result, Row, Skeleton, Tag } from 'antd'
+import { SolutionOutlined, UserOutlined }                 from '@ant-design/icons'
+import { useNavigate }                                    from 'react-router-dom'
 
 import { ApplicantCard }      from '../../components/hr/ApplicantCard'
 import { ApplicationFilters } from '../../components/hr/ApplicationFilters'
@@ -12,6 +13,7 @@ import { useApplications }    from '../../hooks/useApplications'
  * Fetches applications per selected job and supports optimistic status updates.
  */
 export function Applications() {
+  const navigate = useNavigate()
   const {
     jobs,
     filteredApps,
@@ -23,11 +25,8 @@ export function Applications() {
     selectedJobId,
     selectedStatus,
     selectedApp,
-    drawerOpen,
     setSelectedStatus,
-    setDrawerOpen,
     handleJobChange,
-    handleView,
     handleStatusChange,
     loadJobs,
     loadApplications,
@@ -41,7 +40,7 @@ export function Applications() {
     {
       title: 'Action',
       key: 'action',
-      render: (_, record) => <Button type="text" size="small" onClick={() => handleView(record)}>View</Button>,
+      render: (_, record) => <Button type="text" size="small" onClick={() => navigate(`/hr/applications/${record.id}`)}>View</Button>,
     },
   ]
 
@@ -75,7 +74,7 @@ export function Applications() {
             columns={columns}
             dataSource={filteredApps}
             emptyText="No applications match the current filters."
-            extraProps={{ onRow: (record) => ({ onClick: () => handleView(record), className: 'cursor-pointer' }) }}
+            extraProps={{ onRow: (record) => ({ onClick: () => navigate(`/hr/applications/${record.id}`), className: 'cursor-pointer' }) }}
           />
         </Col>
 
@@ -135,23 +134,6 @@ export function Applications() {
       />
 
       {renderContent()}
-
-      <Drawer
-        title={selectedApp?.candidateName}
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        width={480}
-        placement="right"
-        destroyOnClose={false}
-      >
-        {selectedApp && (
-          <ApplicantCard
-            applicant={selectedApp}
-            onStatusChange={handleStatusChange}
-            statusUpdating={statusUpdating}
-          />
-        )}
-      </Drawer>
     </div>
   )
 }

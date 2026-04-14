@@ -16,20 +16,27 @@ const STATUS_OPTIONS = [
 
 const NA = () => <Text type="secondary" italic>Not available</Text>
 
-const isMissing = (value) => !value || value === '—'
+const isMissing = (value) => !value || value === '-'
 
-/**
- * ApplicantCard
- * Detailed profile card for a single applicant with Phase 1 fallback handling.
- *
- * @param {object} props
- * @param {object} props.applicant
- * @param {Function} props.onStatusChange
- * @param {boolean} [props.statusUpdating=false]
- */
+function getAllowedStatusOptions(currentStatus) {
+  const workflowOrder = ['applied', 'under_review', 'shortlisted', 'interview']
+  const terminalStatuses = ['selected', 'rejected']
+
+  if (terminalStatuses.includes(currentStatus)) {
+    return STATUS_OPTIONS.filter((option) => option.value === currentStatus)
+  }
+
+  return STATUS_OPTIONS.filter((option) => {
+    if (terminalStatuses.includes(option.value)) return true
+    if (!workflowOrder.includes(currentStatus) || !workflowOrder.includes(option.value)) return false
+    return workflowOrder.indexOf(option.value) >= workflowOrder.indexOf(currentStatus)
+  })
+}
+
 export function ApplicantCard({ applicant, onStatusChange, statusUpdating = false }) {
   const isFallbackName = applicant.candidateName?.startsWith('Candidate ')
-  const showExperienceFallback = applicant.experienceYears === '—' || applicant.experienceYears === ''
+  const showExperienceFallback = applicant.experienceYears === '-' || applicant.experienceYears === ''
+  const allowedStatusOptions = getAllowedStatusOptions(applicant.status)
 
   return (
     <Card>
@@ -99,7 +106,7 @@ export function ApplicantCard({ applicant, onStatusChange, statusUpdating = fals
         onChange={(value) => onStatusChange(applicant.id, value)}
         className="mt-1.5 w-full"
       >
-        {STATUS_OPTIONS.map((option) => (
+        {allowedStatusOptions.map((option) => (
           <Select.Option key={option.value} value={option.value}>
             <StatusBadge status={option.value} />
           </Select.Option>

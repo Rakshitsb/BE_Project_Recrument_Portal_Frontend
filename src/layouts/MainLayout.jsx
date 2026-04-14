@@ -11,6 +11,8 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   BellOutlined,
+  VideoCameraOutlined,
+  RobotOutlined,
 } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import useAuth from '../hooks/useAuth'
@@ -30,6 +32,8 @@ const hrMenuItems = [
   { key: '/hr',              icon: <DashboardOutlined />, label: 'Dashboard' },
   { key: '/hr/jobs',         icon: <SolutionOutlined />,  label: 'Manage Jobs' },
   { key: '/hr/applications', icon: <TeamOutlined />,      label: 'Applications' },
+  { key: '/hr/interviews',   icon: <VideoCameraOutlined />, label: 'Interviews' },
+  { key: '/hr/interviewers', icon: <RobotOutlined />,       label: 'Interviewers' },
 ]
 
 /**
@@ -45,7 +49,9 @@ function MainLayout({ role }) {
 
   const menuItems = role === 'hr' ? hrMenuItems : candidateMenuItems
   const selectedMenuKey =
-    role === 'candidate' && (location.pathname === '/jobs' || location.pathname.startsWith('/candidate/jobs'))
+    location.pathname.startsWith('/hr/interviews/')
+      ? '/hr/interviews'
+      : role === 'candidate' && (location.pathname === '/jobs' || location.pathname.startsWith('/candidate/jobs'))
       ? '/candidate/jobs'
       : location.pathname
 
