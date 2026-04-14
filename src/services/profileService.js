@@ -46,19 +46,31 @@ export const profileService = {
         timeout: 60000,
       })
 
+      // Pass through the complete raw API response so that structured
+      // arrays (projects, education, experience) and all scalar fields
+      // (location, bio, etc.) reach the hook without being stripped.
       return {
-        fullName:   data.full_name   || data.fullName   || '',
-        email:      data.email       || '',
-        phone:      data.phone       || '',
+        // Spread everything first so no field is accidentally lost
+        ...data,
+        // Normalise the name field (backend returns full_name)
+        full_name:  data.full_name  || data.fullName  || '',
+        fullName:   data.full_name  || data.fullName  || '',
+        email:      data.email      || '',
+        phone:      data.phone      || '',
+        location:   data.location   || null,
+        // Keep skills as an array
         skills:     Array.isArray(data.skills)
           ? data.skills
           : typeof data.skills === 'string'
             ? data.skills.split(',').map((s) => s.trim()).filter(Boolean)
             : [],
-        education:  data.education   || '',
-        experience: data.experience  || '',
-        gender:     data.gender      || data.sex || '',
-        dob:        data.dob         || data.date_of_birth || null,
+        // Preserve structured arrays exactly as the backend sends them
+        education:  data.education  ?? [],
+        experience: data.experience ?? [],
+        projects:   data.projects   ?? [],
+        bio:        data.bio        || null,
+        gender:     data.gender     || data.sex || '',
+        dob:        data.dob        || data.date_of_birth || null,
       }
     } catch (err) {
       if (err.response?.status === 422) {

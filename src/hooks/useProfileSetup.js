@@ -57,11 +57,10 @@ function useProfileSetup(form) {
                       : parsed.education
                       ? [{ degree: parsed.education, institution: '', year: '' }]
                       : [],
-          // experience: AI returns array of { title, company, duration, description }
-          //             or empty array
+          // experience: AI returns array of { role/title, company, duration, description }
           experience: Array.isArray(parsed.experience)
                       ? parsed.experience.map((e) => ({
-                          title:       e.title       || '',
+                          title:       e.title       || e.role  || '',
                           company:     e.company     || '',
                           duration:    e.duration    || '',
                           description: e.description || '',
@@ -80,7 +79,11 @@ function useProfileSetup(form) {
         }
 
         setProfileData(formData)
-        form.setFieldsValue(formData)
+        // resetFields is REQUIRED for Ant Design Form.List to re-render with
+        // new array data after the form is already mounted.
+        // Calling setFieldsValue alone does NOT update Form.List items.
+        form.resetFields()
+        form.setFieldsValue({ accountType: 'candidate', ...formData })
         setResumeParsed(true)
         message.success('✅ Resume parsed successfully! Please review and edit your details.')
       } catch (err) {
