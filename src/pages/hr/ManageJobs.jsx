@@ -16,7 +16,7 @@ export function ManageJobs() {
     jobs, setJobs,
     drawerOpen, setDrawerOpen,
     editingJob, setEditingJob,
-    deleteTarget, confirmOpen,
+    confirmOpen,
     fetchLoading, fetchError, actionLoading,
     fetchJobs, handleSave, handleToggleActive,
     handleEdit, handleDelete, handleCancelDelete, handleConfirmDelete,
@@ -53,33 +53,44 @@ export function ManageJobs() {
   return (
     <div className="fade-in-up">
 
-      <PageHeader
-        title="Manage Jobs"
-        subtitle="Post and manage your job listings"
-        actions={headerActions}
-      />
-
-      {fetchLoading && jobs.length === 0
-        ? <Skeleton active paragraph={{ rows: 6 }} />
-        : (
-          <JobsTable
-            jobs={jobs}
-            loading={fetchLoading}
-            actionLoading={actionLoading}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onToggleActive={handleToggleActive}
+      {drawerOpen ? (
+        <>
+          <PageHeader
+            title={editingJob ? 'Edit Job' : 'Post New Job'}
+            subtitle="Upload a JD, review the auto-filled details, and create the final job post"
           />
-        )
-      }
 
-      <JobForm
-        open={drawerOpen}
-        job={editingJob}
-        actionLoading={actionLoading}
-        onClose={() => setDrawerOpen(false)}
-        onSave={handleSave}
-      />
+          <JobForm
+            open={drawerOpen}
+            job={editingJob}
+            actionLoading={actionLoading}
+            onClose={() => { setDrawerOpen(false); setEditingJob(null) }}
+            onSave={handleSave}
+          />
+        </>
+      ) : (
+        <>
+          <PageHeader
+            title="Manage Jobs"
+            subtitle="Post and manage your job listings"
+            actions={headerActions}
+          />
+
+          {fetchLoading && jobs.length === 0
+            ? <Skeleton active paragraph={{ rows: 6 }} />
+            : (
+              <JobsTable
+                jobs={jobs}
+                loading={fetchLoading}
+                actionLoading={actionLoading}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onToggleActive={handleToggleActive}
+              />
+            )
+          }
+        </>
+      )}
 
       <ConfirmModal
         open={confirmOpen}

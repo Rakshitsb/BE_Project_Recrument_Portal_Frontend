@@ -60,6 +60,9 @@ const toBackendJob = (values) => ({
   experience_required:   values.experienceRequired ?? values.experience_required ?? 0,
   salary_range:          values.salaryRange || values.salary_range || null,
   cover_letter_required: values.coverLetterRequired ?? values.cover_letter_required ?? false,
+  is_active:             values.isActive ?? values.is_active ?? true,
+  jd_parsed:             values.jdParsed || values.jd_parsed || undefined,
+  raw_jd_text:           values.rawJdText || values.raw_jd_text || undefined,
 })
 
 /**
@@ -80,9 +83,97 @@ const fromBackendJob = (data) => ({
   salaryRange:         data.salary_range || '',
   coverLetterRequired: data.cover_letter_required,
   isActive:            data.is_active,
+  jdParsed:            data.jd_parsed || null,
+  rawJdText:           data.raw_jd_text || '',
   applicants:          0,
   postedDate:          data.created_at?.split('T')[0] || '',
 })
+
+const normalizeJobType = (type) => {
+  if (!type) return undefined
+  const raw = String(type).trim().toLowerCase()
+  const map = {
+    fulltime: 'Full-Time',
+    'full time': 'Full-Time',
+    'full-time': 'Full-Time',
+    parttime: 'Part-Time',
+    'part time': 'Part-Time',
+    'part-time': 'Part-Time',
+    contract: 'Contract',
+    remote: 'Remote',
+  }
+  return map[raw] || type
+}
+
+const parseExperience = (value) => {
+  if (value === null || value === undefined || value === '') return undefined
+  if (typeof value === 'number') return value
+  const match = String(value).match(/\d+(\.\d+)?/)
+  return match ? Number(match[0]) : undefined
+}
+
+const toStringList = (value) => {
+  if (!value) return []
+
+  if (Array.isArray(value)) {
+    return value.flatMap(toStringList)
+  }
+
+  if (typeof value === 'object') {
+    return Object.values(value).flatMap(toStringList)
+  }
+
+  return String(value)
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+const buildDescription = (parsed) => {
+  if (parsed.description || parsed.job_description) {
+    return parsed.description || parsed.job_description
+  }
+
+  const parts = [
+    parsed.summary,
+    parsed.about_company ? `About Company:\n${parsed.about_company}` : '',
+    Array.isArray(parsed.responsibilities) && parsed.responsibilities.length
+      ? `Responsibilities:\n${parsed.responsibilities.map((item) => `- ${item}`).join('\n')}`
+      : '',
+  ].filter(Boolean)
+
+  return parts.join('\n\n')
+}
+
+const normalizeParsedJd = (payload) => {
+  const parsed = payload?.parsed_jd || payload?.parsedJd || payload || {}
+  const requiredSkills =
+    parsed.required_skills ||
+    parsed.requiredSkills ||
+    parsed.skills ||
+    []
+
+  return {
+    title: parsed.title || parsed.job_title || parsed.jobTitle || '',
+    description: buildDescription(parsed),
+    requiredSkills: toStringList(requiredSkills),
+    location: parsed.location || '',
+    jobType: normalizeJobType(parsed.job_type || parsed.jobType || parsed.employment_type),
+    experienceRequired: parseExperience(
+      parsed.experience_required ||
+      parsed.experienceRequired ||
+      parsed.experience ||
+      parsed.min_experience,
+    ),
+    salaryRange: parsed.salary_range || parsed.salaryRange || parsed.salary || '',
+    coverLetterRequired: Boolean(
+      parsed.cover_letter_required ?? parsed.coverLetterRequired ?? false,
+    ),
+    jdParsed: parsed,
+    rawJdText: payload?.raw_jd_text || payload?.rawJdText || payload?.raw_text || '',
+    modelUsed: payload?.model_used || payload?.modelUsed || '',
+  }
+}
 
 /**
  * Maps backend snake_case application response
@@ -203,6 +294,24 @@ const jobService = {
   createJob: async (values) => {
     const { data } = await api.post('/jobs/', toBackendJob(values))
     return fromBackendJob(data)
+  },
+
+  /**
+   * Parse an uploaded JD file into structured job data.
+   * POST /ai/parse-jd
+   * @param {File} file
+   * @returns {Promise<object>} camelCase job fields with parsed metadata
+   */
+  parseJd: async (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const { data } = await api.post('/ai/parse-jd', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000,
+    })
+
+    return normalizeParsedJd(data)
   },
 
   /**

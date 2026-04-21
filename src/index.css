@@ -249,3 +249,165 @@ a:hover {
 .ant-steps-item-title {
   font-size: 13px !important;
 }
+
+/* =============================================
+   HR Job Form
+   ============================================= */
+.job-form-page {
+  width: 100%;
+}
+
+.job-form-card {
+  width: 100%;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.job-form-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.jd-upload .ant-upload-drag {
+  border-radius: 8px;
+}
+
+.jd-upload-content {
+  padding: 26px 16px;
+}
+
+.jd-upload-icon {
+  color: var(--color-primary);
+  font-size: 42px;
+}
+
+.jd-upload-icon.active {
+  color: var(--color-primary);
+}
+
+.jd-upload-icon.success {
+  color: #52c41a;
+}
+
+.job-form-alert {
+  margin-top: 12px;
+  border-radius: 8px;
+}
+
+.parsed-jd-preview {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fbfdff;
+}
+
+.parsed-jd-preview-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.parsed-jd-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.parsed-jd-summary-item {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid #edf0f3;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.parsed-jd-summary-item .ant-typography {
+  overflow-wrap: anywhere;
+}
+
+.parsed-jd-sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.parsed-jd-section {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #edf0f3;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.parsed-jd-section-title {
+  margin: 0 0 10px !important;
+}
+
+.parsed-jd-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.parsed-jd-tag {
+  max-width: 100%;
+  margin-inline-end: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.parsed-jd-object,
+.parsed-jd-subsection {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.parsed-jd-subsection + .parsed-jd-subsection {
+  padding-top: 8px;
+  border-top: 1px solid #f1f3f5;
+}
+
+.parsed-jd-nested {
+  width: 100%;
+}
+
+.job-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+}
+
+@media (max-width: 1100px) {
+  .parsed-jd-summary-grid,
+  .parsed-jd-sections {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .job-form-heading {
+    flex-direction: column;
+  }
+
+  .job-form-actions {
+    justify-content: stretch;
+  }
+
+  .job-form-actions .ant-space,
+  .job-form-actions .ant-btn {
+    width: 100%;
+  }
+}
