@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Row,
@@ -10,7 +10,9 @@ import {
   Avatar,
   Empty,
   Button,
+  Drawer,
   Skeleton,
+  Space,
   Result,
 } from 'antd'
 import {
@@ -18,6 +20,8 @@ import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   FireOutlined,
+  MessageOutlined,
+  RobotOutlined,
 } from '@ant-design/icons'
 
 import useAuthStore from '../../store/authStore'
@@ -25,8 +29,21 @@ import useApiCall from '../../hooks/useApiCall'
 import applicationService from '../../services/applicationService'
 import StatCard from '../../components/ui/StatCard'
 import StatusBadge from '../../components/ui/StatusBadge'
+import ChatWindow from '../../components/chat/ChatWindow'
 
 const { Title, Text } = Typography
+
+const statusColorMap = {
+  shortlisted: 'blue',
+  interview: 'purple',
+  selected: 'success',
+}
+
+const StatusTag = ({ status }) => (
+  <Tag color={statusColorMap[status] || 'default'}>
+    {status.charAt(0).toUpperCase() + status.slice(1)}
+  </Tag>
+)
 
 const getRelativeDateLabel = (dateValue) => {
   const parsedDate = new Date(dateValue)
@@ -50,6 +67,9 @@ const getRelativeDateLabel = (dateValue) => {
 function CandidateDashboard() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [activeChat, setActiveChat] = useState(null)
+  // activeChat shape: { jobId: string, jobTitle: string }
 
   const {
     execute: loadApplications,
@@ -89,6 +109,26 @@ function CandidateDashboard() {
         .slice(0, 5),
     [applications],
   )
+
+  // Filter applications eligible for chatbot
+  const CHAT_STATUSES = ['shortlisted', 'interview', 'selected']
+
+  const chatEligibleApplications = (applications || []).filter(
+    (app) => CHAT_STATUSES.includes(app.status)
+  )
+
+  // Open drawer for a specific job
+  const openChatDrawer = (jobId, jobTitle) => {
+    setActiveChat({ jobId, jobTitle })
+    setDrawerOpen(true)
+  }
+
+  const closeChatDrawer = () => {
+    setDrawerOpen(false)
+    // Delay clearing activeChat so ChatWindow doesn't flash
+    // empty state while the drawer animates closed
+    setTimeout(() => setActiveChat(null), 300)
+  }
 
   return (
     <div className="fade-in-up">
@@ -194,6 +234,128 @@ function CandidateDashboard() {
           />
         )}
       </Card>
+
+      {/* ══════════════════════════════════════════
+          AI JOB ASSISTANTS SECTION
+          Only renders when at least one eligible application exists
+          ══════════════════════════════════════════ */}
+      {chatEligibleApplications.length > 0 && (
+        <Card
+          style={{ marginTop: 24 }}
+          title={
+            <Space>
+              <RobotOutlined style={{ color: '#1890ff', fontSize: 18 }} />
+              <Title level={5} style={{ margin: 0 }}>
+                AI Job Assistants
+              </Title>
+            </Space>
+          }
+          extra={
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              Available for shortlisted applications
+            </Text>
+          }
+        >
+          <List
+            dataSource={chatEligibleApplications}
+            renderItem={(app) => (
+              <List.Item
+                key={app.job_id}
+                style={{
+                  padding: '12px 0',
+                  borderBottom: '1px solid #f0f0f0',
+                }}
+                actions={[
+                  <Button
+                    key="chat"
+                    type="primary"
+                    size="small"
+                    icon={<MessageOutlined />}
+                    onClick={() =>
+                      openChatDrawer(
+                        app.job_id,
+                        app.job_title || 'Job'
+                      )
+                    }
+                  >
+                    Chat
+                  </Button>,
+                ]}
+              >
+                <List.Item.Meta
+                  avatar={
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        backgroundColor: '#e6f4ff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <CheckCircleOutlined
+                        style={{ color: '#1890ff', fontSize: 18 }}
+                      />
+                    </div>
+                  }
+                  title={
+                    <Space>
+                      <Text strong>{app.job_title || 'Job'}</Text>
+                      <StatusTag status={app.status} />
+                    </Space>
+                  }
+                  description={
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {app.company_name
+                        ? `${app.company_name} · `
+                        : ''}
+                      AI assistant ready to answer your questions
+                    </Text>
+                  }
+                />
+              </List.Item>
+            )}
+          />
+        </Card>
+      )}
+
+      {/* ══════════════════════════════════════════
+          CHAT DRAWER
+          Renders outside the section so it overlays the full page
+          ══════════════════════════════════════════ */}
+      <Drawer
+        title={
+          <Space>
+            <RobotOutlined style={{ color: '#1890ff' }} />
+            <span>AI Assistant</span>
+            {activeChat?.jobTitle && (
+              <Text type="secondary" style={{ fontSize: 13 }}>
+                — {activeChat.jobTitle}
+              </Text>
+            )}
+          </Space>
+        }
+        placement="right"
+        width={Math.min(480, window.innerWidth)}
+        open={drawerOpen}
+        onClose={closeChatDrawer}
+        destroyOnClose={false}
+        bodyStyle={{ padding: 0, display: 'flex', flexDirection: 'column' }}
+      >
+        {activeChat ? (
+          <ChatWindow
+            jobId={activeChat.jobId}
+            jobTitle={activeChat.jobTitle}
+          />
+        ) : (
+          <Empty
+            style={{ marginTop: 80 }}
+            description="Select a job to start chatting"
+          />
+        )}
+      </Drawer>
     </div>
   )
 }

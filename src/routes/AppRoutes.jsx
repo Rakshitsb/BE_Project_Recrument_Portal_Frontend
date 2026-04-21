@@ -24,6 +24,7 @@ const MyApplications     = lazy(() => import('../pages/candidate/MyApplications'
 const JobDetailPage      = lazy(() => import('../pages/candidate/JobDetailPage'))
 const CandidateProfile   = lazy(() => import('../pages/candidate/CandidateProfile'))
 const EditProfile        = lazy(() => import('../pages/candidate/EditProfile'))
+const ChatbotInbox       = lazy(() => import('../pages/chat/ChatbotInbox'))
 
 // HR pages
 const HRDashboard    = lazy(() => import('../pages/hr/HRDashboard'))
@@ -83,6 +84,7 @@ function AppRoutes() {
               <Route path="/jobs"                         element={<JobsPage />} />
               <Route path="/candidate/jobs/:jobId"        element={<JobDetailPage />} />
               <Route path="/candidate/applications"       element={<MyApplications />} />
+              <Route path="/candidate/chatbot"            element={<ChatbotInbox />} />
               <Route path="/candidate/profile"            element={<CandidateProfile />} />
               <Route path="/candidate/profile/setup"      element={<ProfileSetup />} />
               <Route path="/candidate/profile/edit"       element={<EditProfile />} />
@@ -99,6 +101,7 @@ function AppRoutes() {
               <Route path="/hr/jobs"             element={<ManageJobs />} />
               <Route path="/hr/applications"     element={<Applications />} />
               <Route path="/hr/applications/:applicationId" element={<ApplicationDetail />} />
+              <Route path="/hr/chatbot"          element={<ChatbotInbox />} />
               <Route path="/hr/profile"          element={<HRProfile />} />
               <Route path="/hr/interviewers"     element={<Interviewers />} />
               <Route path="/hr/interviews"       element={<Interviews />} />

@@ -91,8 +91,18 @@ function useAuth() {
         let profileCompleted = true
 
         if (user.role === 'hr') {
-          const hrProfile = await hrProfileService.getProfile(token)
-          profileCompleted = Boolean(hrProfile)
+          try {
+            const hrProfile = await hrProfileService.getProfile(token)
+            profileCompleted = Boolean(hrProfile)
+          } catch (err) {
+            // 404 = profile not created yet (new HR user)
+            // 403 = role mismatch in DB (treat same as not-set-up)
+            if (err.response?.status === 404 || err.response?.status === 403) {
+              profileCompleted = false
+            } else {
+              throw err
+            }
+          }
         }
 
         if (user.role === 'candidate') {

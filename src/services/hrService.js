@@ -220,7 +220,9 @@ const hrProfileService = {
       const { data } = await api.get('/hr/profile', config)
       return fromBackendProfile(data)
     } catch (err) {
-      if (err.response?.status === 404) {
+      // 404 = profile not created yet
+      // 403 = role mismatch in DB — treat as no profile
+      if (err.response?.status === 404 || err.response?.status === 403) {
         return null
       }
       throw err

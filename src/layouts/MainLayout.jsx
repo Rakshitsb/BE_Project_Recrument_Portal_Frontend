@@ -13,6 +13,7 @@ import {
   BellOutlined,
   VideoCameraOutlined,
   RobotOutlined,
+  MessageOutlined,
 } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import useAuth from '../hooks/useAuth'
@@ -25,6 +26,7 @@ const candidateMenuItems = [
   { key: '/candidate',              icon: <DashboardOutlined />, label: 'Dashboard' },
   { key: '/candidate/jobs',         icon: <SearchOutlined />,    label: 'Browse Jobs' },
   { key: '/candidate/applications', icon: <FileTextOutlined />,  label: 'My Applications' },
+  { key: '/candidate/chatbot',      icon: <MessageOutlined />,   label: 'AI Chatbot' },
   { key: '/candidate/profile',      icon: <UserOutlined />,      label: 'My Profile' },
 ]
 
@@ -32,6 +34,7 @@ const hrMenuItems = [
   { key: '/hr',              icon: <DashboardOutlined />, label: 'Dashboard' },
   { key: '/hr/jobs',         icon: <SolutionOutlined />,  label: 'Manage Jobs' },
   { key: '/hr/applications', icon: <TeamOutlined />,      label: 'Applications' },
+  { key: '/hr/chatbot',      icon: <MessageOutlined />,   label: 'AI Chatbot' },
   { key: '/hr/interviews',   icon: <VideoCameraOutlined />, label: 'Interviews' },
   { key: '/hr/interviewers', icon: <RobotOutlined />,       label: 'Interviewers' },
 ]

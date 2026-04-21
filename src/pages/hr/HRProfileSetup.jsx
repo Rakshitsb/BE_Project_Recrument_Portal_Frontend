@@ -37,7 +37,7 @@ export function HRProfileSetup() {
   const [formData,    setFormData]    = useState({})
   const [submitting,  setSubmitting]  = useState(false)
 
-  // ── Submit: POST /hr/profile, update store, redirect ────────────────
+  // ── Submit: POST /hr/profile (upserts via backend), update store, redirect ─
   const handleSubmit = async () => {
     try {
       setSubmitting(true)
@@ -48,10 +48,19 @@ export function HRProfileSetup() {
         : personalForm.getFieldsValue(true)
       const payload = { ...personalValues, ...companyValues }
 
-      await hrProfileService.createProfile(payload)
+      try {
+        await hrProfileService.createProfile(payload)
+      } catch (createErr) {
+        // 400 "Profile already exists" → fall back to update
+        if (createErr?.response?.status === 400) {
+          await hrProfileService.updateProfile(payload)
+        } else {
+          throw createErr
+        }
+      }
 
       updateUser({ profileCompleted: true })
-      message.success('Profile created successfully!')
+      message.success('Profile saved successfully!')
       setCurrentStep(2)
 
       setTimeout(() => navigate('/hr'), 1500)
@@ -63,7 +72,7 @@ export function HRProfileSetup() {
           ? detail
           : Array.isArray(detail)
             ? detail.map((item) => item.msg).join(', ')
-            : 'Failed to create profile. Please try again.'
+            : 'Failed to save profile. Please try again.'
         message.error(msg)
       }
     } finally {

@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { Alert, Button, Card, Form, Input, InputNumber, List, Modal, Select, Spin, Tag, Typography, message } from 'antd';
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Alert, Button, Card, Form, Input, InputNumber, List, Modal, Progress, Select, Spin, Tag, Typography, message } from 'antd';
 import { createInterview } from '../../services/interviewService';
 import { getInterviewers } from '../../services/interviewerService';
 import { applicationService, jobService } from '../../services/hrService';
+import { sendHRMessage } from '../../services/chatbotService';
 
 const { Text, Paragraph } = Typography;
 
@@ -34,7 +36,10 @@ function buildCandidateAwareContext(application) {
     ].filter(Boolean).join('\n');
 }
 
+const REDIRECT_DELAY_MS = 2000;
+
 export function CreateInterviewModal({ open, onClose, onCreated, prefillApplication = null }) {
+    const navigate = useNavigate();
     const [form] = Form.useForm();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
@@ -44,6 +49,9 @@ export function CreateInterviewModal({ open, onClose, onCreated, prefillApplicat
     const [candidateOptions, setCandidateOptions] = useState([]);
     const [candidateOptionsLoading, setCandidateOptionsLoading] = useState(false);
     const [createdInterview, setCreatedInterview] = useState(null);
+    const [countdown, setCountdown] = useState(100); // percent for progress bar
+    const redirectTimerRef = useRef(null);
+    const countdownIntervalRef = useRef(null);
 
     useEffect(() => {
         if (!open || interviewers.length > 0) return;
@@ -114,6 +122,9 @@ export function CreateInterviewModal({ open, onClose, onCreated, prefillApplicat
         setStep(1);
         setCreatedInterview(null);
         setLoading(false);
+        setCountdown(100);
+        clearTimeout(redirectTimerRef.current);
+        clearInterval(countdownIntervalRef.current);
     };
 
     const handleClose = () => {
@@ -129,6 +140,9 @@ export function CreateInterviewModal({ open, onClose, onCreated, prefillApplicat
             setLoading(true);
             try {
                 const response = await createInterview(values);
+                // ── Chatbot invite (non-blocking) ──────────────────────────
+                await sendInterviewInvite(response);
+                // ───────────────────────────────────────────────────────────
                 setCreatedInterview(response);
                 setStep(2);
             } catch (error) {
@@ -152,11 +166,72 @@ export function CreateInterviewModal({ open, onClose, onCreated, prefillApplicat
         }
     };
 
-    const handleDone = () => {
-        onCreated(createdInterview);
+    const sendInterviewInvite = async (createdInterview) => {
+        try {
+            // Build the candidate-facing interview URL
+            const interviewUrl = createdInterview.interview_token
+                ? `${window.location.origin}/interview/${createdInterview.interview_token}`
+                : null;
+
+            // Determine job title for the message
+            // Use prop if available, otherwise fall back to a generic label
+            const titleLabel = prefillApplication?.jobTitle || 'this position';
+
+            await sendHRMessage(
+                createdInterview.job_id,
+                createdInterview.candidate_id,
+                {
+                    message: `Congratulations! You have been invited for an AI-powered interview for the ${titleLabel} position. Click the button below to begin your interview when you are ready. Good luck!`,
+                    interview_link: interviewUrl,
+                    interview_id: createdInterview._id,
+                    message_type: 'interview_invite',
+                }
+            );
+        } catch (err) {
+            // Silently swallow — chatbot notification is best-effort only.
+            // The interview itself was already created successfully.
+            console.warn(
+                '[CreateInterviewModal] Chatbot invite failed (non-blocking):',
+                err?.response?.data?.detail || err.message
+            );
+        }
+    };
+
+    const handleDone = (interview) => {
+        onCreated(interview);
         resetModal();
         onClose();
+        const interviewId = interview?._id || interview?.id;
+        if (interviewId) {
+            navigate(`/hr/interviews/${interviewId}?view=summary`);
+        }
     };
+
+    // Auto-redirect when the success step is shown
+    useEffect(() => {
+        if (step !== 2 || !createdInterview) return;
+
+        setCountdown(100);
+        const startTime = Date.now();
+
+        // Tick every 50ms to animate the progress bar smoothly
+        countdownIntervalRef.current = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            const remaining = Math.max(0, 100 - (elapsed / REDIRECT_DELAY_MS) * 100);
+            setCountdown(remaining);
+        }, 50);
+
+        redirectTimerRef.current = setTimeout(() => {
+            clearInterval(countdownIntervalRef.current);
+            handleDone(createdInterview);
+        }, REDIRECT_DELAY_MS);
+
+        return () => {
+            clearTimeout(redirectTimerRef.current);
+            clearInterval(countdownIntervalRef.current);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [step, createdInterview]);
 
     const handleCandidateSelect = (applicationId) => {
         const selectedApplication = candidateOptions.find((candidate) => candidate.id === applicationId);
@@ -312,57 +387,72 @@ export function CreateInterviewModal({ open, onClose, onCreated, prefillApplicat
             )}
 
             {step === 2 && createdInterview && (
-                <div className="mt-4">
-                    <Alert
-                        type="success"
-                        showIcon
-                        message={`Interview "${createdInterview?.name}" created successfully`}
-                        description={`AI generated ${createdInterview?.question_count} questions based on the role, objective, and candidate context.`}
-                        style={{ marginBottom: 16 }}
-                    />
-
-                    <div className="mb-4">
-                        <Text strong>AI-Generated Description:</Text>
-                        <Paragraph italic className="text-gray-500 mt-1">
-                            {createdInterview?.description}
-                        </Paragraph>
-                    </div>
-
-                    <div className="mb-4">
-                        <Text strong>Generated Questions:</Text>
-                        <List
-                            className="mt-2"
-                            dataSource={createdInterview?.questions || []}
-                            renderItem={(item, index) => (
-                                <List.Item style={{ borderLeft: '3px solid #0d9488', paddingLeft: 12, marginBottom: 8 }}>
-                                    <div>
-                                        <span className="font-semibold mr-2">{index + 1}.</span>
-                                        {item.question}
-                                    </div>
-                                </List.Item>
-                            )}
-                        />
-                    </div>
-
-                    <div className="flex justify-end mt-6">
-                        <Button
-                            onClick={() => { setStep(1); setCreatedInterview(null); }}
-                            className="mr-2"
-                            disabled={submitting}
-                        >
-                            Back
-                        </Button>
-                        <Button
-                            type="primary"
-                            style={{ backgroundColor: '#0d9488', borderColor: '#0d9488' }}
-                            onClick={handleDone}
-                            loading={submitting}
-                        >
-                            Done
-                        </Button>
-                    </div>
-                </div>
+                <AutoRedirectStep
+                    createdInterview={createdInterview}
+                    countdown={countdown}
+                    onDone={() => handleDone(createdInterview)}
+                />
             )}
         </Modal>
+    );
+}
+
+// ── AutoRedirectStep ────────────────────────────────────────────────────────
+function AutoRedirectStep({ createdInterview, countdown, onDone }) {
+    const { Text, Paragraph } = Typography;
+    const secondsLeft = Math.ceil((countdown / 100) * 2);
+
+    return (
+        <div className="mt-4">
+            <Alert
+                type="success"
+                showIcon
+                message="Interview created! Candidate notified via chat."
+                description={`AI generated ${createdInterview?.question_count} questions based on the role, objective, and candidate context.`}
+                style={{ marginBottom: 16 }}
+            />
+
+            <div className="mb-4">
+                <Text strong>AI-Generated Description:</Text>
+                <Paragraph italic className="text-gray-500 mt-1">
+                    {createdInterview?.description}
+                </Paragraph>
+            </div>
+
+            <div className="mb-4">
+                <Text strong>Generated Questions:</Text>
+                <List
+                    className="mt-2"
+                    dataSource={createdInterview?.questions || []}
+                    renderItem={(item, index) => (
+                        <List.Item style={{ borderLeft: '3px solid #0d9488', paddingLeft: 12, marginBottom: 8 }}>
+                            <div>
+                                <span className="font-semibold mr-2">{index + 1}.</span>
+                                {item.question}
+                            </div>
+                        </List.Item>
+                    )}
+                />
+            </div>
+
+            <div style={{ marginTop: 24 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                        Redirecting to interview page in {secondsLeft}s…
+                    </Text>
+                    <Button size="small" type="link" onClick={onDone} style={{ color: '#0d9488', padding: 0 }}>
+                        Go now
+                    </Button>
+                </div>
+                <Progress
+                    percent={Math.round(countdown)}
+                    showInfo={false}
+                    strokeColor="#0d9488"
+                    trailColor="#e2e8f0"
+                    size="small"
+                    style={{ marginBottom: 0 }}
+                />
+            </div>
+        </div>
     );
 }

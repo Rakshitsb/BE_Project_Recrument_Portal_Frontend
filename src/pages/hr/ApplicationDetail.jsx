@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Alert, Avatar, Button, Card, Col, Divider, Result, Row, Select, Skeleton, Space, Switch, Tag, Typography, message } from 'antd';
-import { ArrowLeftOutlined, CheckCircleFilled, FileTextOutlined, LineChartOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';
+import { Alert, Avatar, Button, Card, Col, Divider, Result, Row, Select, Skeleton, Space, Tag, Typography, message } from 'antd';
+import { ArrowLeftOutlined, CheckCircleFilled, CheckCircleOutlined, FileTextOutlined, LineChartOutlined, MailOutlined, StopOutlined, UserOutlined } from '@ant-design/icons';
 import { applicationService } from '../../services/hrService';
 import { CreateInterviewModal } from '../../components/interview/CreateInterviewModal';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { getInterviews } from '../../services/interviewService';
 import { getResponsesByInterviewId } from '../../services/interviewResponseService';
+import { disableChatbot, enableChatbot, getHRChatSession } from '../../services/chatbotService';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -53,6 +54,8 @@ export function ApplicationDetail() {
     const [statusUpdating, setStatusUpdating] = useState(false);
     const [createInterviewOpen, setCreateInterviewOpen] = useState(false);
     const [chatbotEnabled, setChatbotEnabled] = useState(false);
+    const [chatbotLoading, setChatbotLoading] = useState(false);
+    const [chatbotActionLoading, setChatbotActionLoading] = useState(false);
 
     // Interview completion state
     const [linkedInterview, setLinkedInterview] = useState(null);   // interview doc linked to this application
@@ -122,7 +125,7 @@ export function ApplicationDetail() {
                         prev ? { ...prev, status: completedResponse.candidate_status } : prev
                     );
                 }
-            } catch (_) {
+            } catch {
                 // Non-critical — swallow silently
             }
         };
@@ -130,6 +133,28 @@ export function ApplicationDetail() {
         checkInterview();
         return () => { mounted = false; };
     }, [applicationId]);
+
+    useEffect(() => {
+        if (!application?.jobId || !application?.candidateId) return;
+        let mounted = true;
+
+        const loadChatbotStatus = async () => {
+            setChatbotLoading(true);
+            try {
+                const session = await getHRChatSession(application.jobId, application.candidateId);
+                if (mounted) setChatbotEnabled(Boolean(session?.is_enabled));
+            } catch (err) {
+                if (mounted && err.response?.status === 404) {
+                    setChatbotEnabled(false);
+                }
+            } finally {
+                if (mounted) setChatbotLoading(false);
+            }
+        };
+
+        loadChatbotStatus();
+        return () => { mounted = false; };
+    }, [application?.jobId, application?.candidateId]);
 
     const isShortlisted = application?.status === 'shortlisted' || application?.status === 'interview';
     const allowedStatusOptions = getAllowedStatusOptions(application?.status);
@@ -145,11 +170,31 @@ export function ApplicationDetail() {
         try {
             await applicationService.updateStatus(application.id, newStatus);
             message.success('Application status updated');
-        } catch (err) {
+        } catch {
             setApplication((prev) => ({ ...prev, status: previousStatus }));
             message.error('Failed to update application status');
         } finally {
             setStatusUpdating(false);
+        }
+    };
+
+    const handleToggleChatbot = async () => {
+        if (!application?.jobId || !application?.candidateId) return;
+
+        setChatbotActionLoading(true);
+        try {
+            const nextEnabled = !chatbotEnabled;
+            if (nextEnabled) {
+                await enableChatbot(application.jobId, application.candidateId);
+            } else {
+                await disableChatbot(application.jobId, application.candidateId);
+            }
+            setChatbotEnabled(nextEnabled);
+            message.success(nextEnabled ? 'Chatbot enabled for candidate' : 'Chatbot disabled for candidate');
+        } catch {
+            message.error('Failed to update chatbot status');
+        } finally {
+            setChatbotActionLoading(false);
         }
     };
 
@@ -186,7 +231,7 @@ export function ApplicationDetail() {
                 showIcon
                 style={{ marginBottom: 24 }}
                 message="Candidate workflow"
-                description="Shortlist the candidate first. Once shortlisted, interview generation and the future chatbot toggle become available on this page."
+                description="Shortlist the candidate first. Once shortlisted, interview generation and chatbot controls become available on this page."
             />
 
             <Row gutter={[16, 16]}>
@@ -313,20 +358,27 @@ export function ApplicationDetail() {
                             )}
 
                             <div style={{ padding: 12, borderRadius: 10, backgroundColor: '#f8fafc', border: '1px solid #e5e7eb' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                                    <div>
-                                        <Text strong style={{ display: 'block' }}>Activate Chatbot</Text>
-                                        <Text type="secondary" style={{ fontSize: 12 }}>
-                                            Placeholder for future functionality after shortlisting.
-                                        </Text>
-                                    </div>
-                                    <Switch
-                                        checked={chatbotEnabled}
-                                        onChange={setChatbotEnabled}
-                                        disabled={!isShortlisted}
-                                    />
-                                </div>
+                                <Text strong style={{ display: 'block', marginBottom: 4 }}>
+                                    AI Chatbot
+                                </Text>
+                                <Text type="secondary" style={{ display: 'block', fontSize: 12, marginBottom: 10 }}>
+                                    {chatbotEnabled
+                                        ? 'Candidate can access the AI chatbot from their AI Chatbot tab.'
+                                        : 'Enable chatbot access for this candidate and job.'}
+                                </Text>
+                                <Button
+                                    block
+                                    type={chatbotEnabled ? 'default' : 'primary'}
+                                    danger={chatbotEnabled}
+                                    icon={chatbotEnabled ? <StopOutlined /> : <CheckCircleOutlined />}
+                                    loading={chatbotLoading || chatbotActionLoading}
+                                    disabled={!isShortlisted || chatbotLoading || chatbotActionLoading}
+                                    onClick={handleToggleChatbot}
+                                >
+                                    {chatbotEnabled ? 'Disable Chatbot' : 'Enable Chatbot'}
+                                </Button>
                             </div>
+
                         </Space>
                     </Card>
 
