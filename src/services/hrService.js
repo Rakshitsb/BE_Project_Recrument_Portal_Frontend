@@ -105,6 +105,16 @@ const normalizeJobType = (type) => {
   return map[raw] || type
 }
 
+const isNonEmptyValue = (value) => {
+  if (value === null || value === undefined) return false
+  if (typeof value === 'string') return value.trim() !== ''
+  if (Array.isArray(value)) return value.length > 0
+  if (typeof value === 'object') return Object.keys(value).length > 0
+  return true
+}
+
+const firstNonEmpty = (...values) => values.find(isNonEmptyValue)
+
 const parseExperience = (value) => {
   if (value === null || value === undefined || value === '') return undefined
   if (typeof value === 'number') return value
@@ -129,16 +139,80 @@ const toStringList = (value) => {
     .filter(Boolean)
 }
 
-const buildDescription = (parsed) => {
-  if (parsed.description || parsed.job_description) {
-    return parsed.description || parsed.job_description
+const flattenResponsibilities = (value) => {
+  if (!value) return []
+
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => {
+      if (typeof item === 'string') return item.trim() ? [item.trim()] : []
+
+      if (item && typeof item === 'object') {
+        const heading = item.name ? [`${item.name}:`] : []
+        const tasks = toStringList(item.tasks || item.items || item.details)
+        return [...heading, ...tasks.map((task) => `- ${task}`)]
+      }
+
+      return []
+    })
   }
 
+  return toStringList(value)
+}
+
+const flattenTechnicalSkills = (value) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return toStringList(value)
+  }
+
+  return Object.values(value).flatMap(toStringList)
+}
+
+const formatSalary = (value) => {
+  if (!value) return ''
+  if (typeof value === 'string') return value
+  if (typeof value !== 'object') return String(value)
+
   const parts = [
-    parsed.summary,
+    value.annual_ctc,
+    value.range,
+    value.base,
+    value.bonus ? `Bonus: ${value.bonus}` : '',
+    value.stock_options ? `Stock Options: ${value.stock_options}` : '',
+  ].filter(Boolean)
+
+  return parts.join(' | ')
+}
+
+const formatLocation = (value) => {
+  if (!value) return ''
+  if (typeof value === 'string') return value
+  if (typeof value !== 'object') return String(value)
+
+  return [
+    value.primary,
+    value.office,
+    value.work_type,
+  ].filter(Boolean).join(' | ')
+}
+
+const buildDescription = (parsed) => {
+  const directDescription = firstNonEmpty(
+    parsed.description,
+    parsed.job_description,
+    parsed.job?.description,
+  )
+  if (directDescription) {
+    return directDescription
+  }
+
+  const summary = firstNonEmpty(parsed.summary, parsed.job?.summary)
+  const responsibilities = flattenResponsibilities(parsed.responsibilities)
+
+  const parts = [
+    summary,
     parsed.about_company ? `About Company:\n${parsed.about_company}` : '',
-    Array.isArray(parsed.responsibilities) && parsed.responsibilities.length
-      ? `Responsibilities:\n${parsed.responsibilities.map((item) => `- ${item}`).join('\n')}`
+    responsibilities.length
+      ? `Responsibilities:\n${responsibilities.join('\n')}`
       : '',
   ].filter(Boolean)
 
@@ -147,25 +221,37 @@ const buildDescription = (parsed) => {
 
 const normalizeParsedJd = (payload) => {
   const parsed = payload?.parsed_jd || payload?.parsedJd || payload || {}
-  const requiredSkills =
-    parsed.required_skills ||
-    parsed.requiredSkills ||
-    parsed.skills ||
-    []
+  const job = parsed.job || {}
+  const requiredSkills = [
+    ...toStringList(
+      firstNonEmpty(parsed.required_skills, parsed.requiredSkills, parsed.skills),
+    ),
+    ...flattenTechnicalSkills(parsed.technical_skills),
+    ...toStringList(parsed.keywords),
+  ]
+
+  const uniqueRequiredSkills = [...new Set(requiredSkills)]
 
   return {
-    title: parsed.title || parsed.job_title || parsed.jobTitle || '',
+    title: firstNonEmpty(parsed.title, parsed.job_title, parsed.jobTitle, job.title) || '',
     description: buildDescription(parsed),
-    requiredSkills: toStringList(requiredSkills),
-    location: parsed.location || '',
-    jobType: normalizeJobType(parsed.job_type || parsed.jobType || parsed.employment_type),
-    experienceRequired: parseExperience(
-      parsed.experience_required ||
-      parsed.experienceRequired ||
-      parsed.experience ||
-      parsed.min_experience,
+    requiredSkills: uniqueRequiredSkills,
+    location: formatLocation(firstNonEmpty(parsed.location, parsed.location_details)),
+    jobType: normalizeJobType(
+      firstNonEmpty(parsed.job_type, parsed.jobType, parsed.employment_type, job.employment_type),
     ),
-    salaryRange: parsed.salary_range || parsed.salaryRange || parsed.salary || '',
+    experienceRequired: parseExperience(
+      firstNonEmpty(
+        parsed.experience_required,
+        parsed.experienceRequired,
+        parsed.experience,
+        parsed.min_experience,
+        job.experience_required,
+      ),
+    ),
+    salaryRange: formatSalary(
+      firstNonEmpty(parsed.salary_range, parsed.salaryRange, parsed.salary),
+    ),
     coverLetterRequired: Boolean(
       parsed.cover_letter_required ?? parsed.coverLetterRequired ?? false,
     ),
@@ -353,6 +439,11 @@ const applicationService = {
   getJobApplications: async (jobId) => {
     const { data } = await api.get(`/applications/job/${jobId}`)
     return Array.isArray(data) ? data.map(fromBackendApplication) : []
+  },
+
+  getRankedCandidates: async (jobId) => {
+    const { data } = await api.get(`/applications/job/${jobId}/ranked`)
+    return data
   },
 
   /**

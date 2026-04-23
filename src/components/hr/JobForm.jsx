@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  Alert, Button, Card, Col, Divider, Form, Input, InputNumber, Row, Select,
-  Space, Switch, Tag, Typography, Upload, App,
+  Alert, Button, Card, Col, Collapse, Divider, Form, Input, InputNumber, Row, Select,
+  Space, Switch, Typography, Upload, App,
 } from 'antd'
 import {
   CheckCircleOutlined, FileTextOutlined, InboxOutlined, LoadingOutlined,
-  SaveOutlined,
+  PlusOutlined, SaveOutlined, DeleteOutlined,
 } from '@ant-design/icons'
 
 import { jobService } from '../../services'
@@ -17,14 +17,213 @@ const { Text, Title } = Typography
 const JOB_TYPE_OPTIONS = ['Full-Time', 'Part-Time', 'Contract', 'Remote']
 const ACCEPTED_EXTENSIONS = ['.pdf', '.doc', '.docx']
 
-const PRIORITY_FIELDS = [
-  'title',
-  'company',
-  'location',
-  'experience_required',
-  'employment_type',
-  'salary_range',
-]
+function cloneAndUpdate(value, path, updater) {
+  if (path.length === 0) {
+    return updater(value)
+  }
+
+  const [head, ...rest] = path
+
+  if (Array.isArray(value)) {
+    return value.map((item, index) => (
+      index === head ? cloneAndUpdate(item, rest, updater) : item
+    ))
+  }
+
+  return {
+    ...value,
+    [head]: cloneAndUpdate(value?.[head], rest, updater),
+  }
+}
+
+function getValueAtPath(value, path) {
+  return path.reduce((current, key) => current?.[key], value)
+}
+
+function createEmptyItem(sample) {
+  if (Array.isArray(sample)) return []
+  if (typeof sample === 'number') return 0
+  if (typeof sample === 'boolean') return false
+  if (typeof sample === 'string') return ''
+  if (sample && typeof sample === 'object') {
+    return Object.fromEntries(
+      Object.entries(sample).map(([key, child]) => [key, createEmptyItem(child)]),
+    )
+  }
+  return ''
+}
+
+function ParsedJdEditor({ data, onChange }) {
+  if (!data) return null
+
+  const updatePath = (path, nextValue) => {
+    onChange(cloneAndUpdate(data, path, () => nextValue))
+  }
+
+  const removeArrayItem = (path, index) => {
+    const current = getValueAtPath(data, path)
+    if (!Array.isArray(current)) return
+    updatePath(path, current.filter((_, itemIndex) => itemIndex !== index))
+  }
+
+  const addArrayItem = (path) => {
+    const current = getValueAtPath(data, path)
+    if (!Array.isArray(current)) return
+    const sample = current[0]
+    updatePath(path, [...current, createEmptyItem(sample)])
+  }
+
+  const renderNode = (value, path = [], label = 'Parsed JD JSON') => {
+    if (Array.isArray(value)) {
+      const isPrimitiveArray = value.every(
+        (item) => item === null || ['string', 'number', 'boolean'].includes(typeof item),
+      )
+
+      return (
+        <Card
+          size="small"
+          title={label}
+          style={{ marginBottom: 12, borderRadius: 10 }}
+          extra={(
+            <Button
+              size="small"
+              type="dashed"
+              icon={<PlusOutlined />}
+              onClick={() => addArrayItem(path)}
+            >
+              Add Item
+            </Button>
+          )}
+        >
+          {value.length === 0 && (
+            <Text type="secondary">No items yet.</Text>
+          )}
+
+          {isPrimitiveArray ? (
+            <Space direction="vertical" style={{ width: '100%' }} size={8}>
+              {value.map((item, index) => (
+                <Space key={`${path.join('-')}-${index}`} style={{ width: '100%' }} align="start">
+                  <Input
+                    value={item ?? ''}
+                    onChange={(event) => {
+                      const nextItem =
+                        typeof item === 'number'
+                          ? Number(event.target.value || 0)
+                          : event.target.value
+                      updatePath([...path, index], nextItem)
+                    }}
+                  />
+                  <Button
+                    danger
+                    type="text"
+                    icon={<DeleteOutlined />}
+                    onClick={() => removeArrayItem(path, index)}
+                  />
+                </Space>
+              ))}
+            </Space>
+          ) : (
+            <Space direction="vertical" style={{ width: '100%' }} size={12}>
+              {value.map((item, index) => (
+                <Card
+                  key={`${path.join('-')}-${index}`}
+                  size="small"
+                  title={`${label} ${index + 1}`}
+                  extra={(
+                    <Button
+                      danger
+                      type="text"
+                      icon={<DeleteOutlined />}
+                      onClick={() => removeArrayItem(path, index)}
+                    />
+                  )}
+                >
+                  {renderNode(item, [...path, index], `${label} ${index + 1}`)}
+                </Card>
+              ))}
+            </Space>
+          )}
+        </Card>
+      )
+    }
+
+    if (value && typeof value === 'object') {
+      return (
+        <Card size="small" title={label} style={{ marginBottom: 12, borderRadius: 10 }}>
+          {Object.entries(value).map(([childKey, childValue]) => (
+            <div key={`${path.join('-')}-${childKey}`}>
+              {renderNode(childValue, [...path, childKey], titleize(childKey))}
+            </div>
+          ))}
+        </Card>
+      )
+    }
+
+    if (typeof value === 'boolean') {
+      return (
+        <div style={{ marginBottom: 12 }}>
+          <Text strong style={{ display: 'block', marginBottom: 8 }}>{label}</Text>
+          <Switch checked={value} onChange={(checked) => updatePath(path, checked)} />
+        </div>
+      )
+    }
+
+    if (typeof value === 'number') {
+      return (
+        <div style={{ marginBottom: 12 }}>
+          <Text strong style={{ display: 'block', marginBottom: 8 }}>{label}</Text>
+          <InputNumber
+            value={value}
+            onChange={(nextValue) => updatePath(path, nextValue ?? 0)}
+            style={{ width: '100%' }}
+          />
+        </div>
+      )
+    }
+
+    const textValue = value ?? ''
+    const multiline = String(textValue).length > 100 || String(textValue).includes('\n')
+
+    return (
+      <div style={{ marginBottom: 12 }}>
+        <Text strong style={{ display: 'block', marginBottom: 8 }}>{label}</Text>
+        {multiline ? (
+          <TextArea
+            rows={4}
+            value={textValue}
+            onChange={(event) => updatePath(path, event.target.value)}
+          />
+        ) : (
+          <Input
+            value={textValue}
+            onChange={(event) => updatePath(path, event.target.value)}
+          />
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <Collapse
+      defaultActiveKey={['parsed-jd-json']}
+      className="job-form-alert"
+      items={[
+        {
+          key: 'parsed-jd-json',
+          label: 'Full Parsed JD JSON',
+          children: (
+            <div>
+              <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+                Edit any parsed field here. The complete JSON will still be sent to the backend.
+              </Text>
+              {renderNode(data)}
+            </div>
+          ),
+        },
+      ]}
+    />
+  )
+}
 
 function pruneEmptyFields(values) {
   return Object.fromEntries(
@@ -37,91 +236,6 @@ function titleize(key) {
     .replace(/_/g, ' ')
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     .replace(/\b\w/g, (char) => char.toUpperCase())
-}
-
-function renderParsedValue(value, keyPrefix) {
-  if (Array.isArray(value)) {
-    return (
-      <div className="parsed-jd-list">
-        {value.map((item, index) => (
-          typeof item === 'object' && item !== null ? (
-            <div key={`${keyPrefix}-${index}`} className="parsed-jd-nested">
-              {renderParsedValue(item, `${keyPrefix}-${index}`)}
-            </div>
-          ) : (
-            <Tag key={`${keyPrefix}-${index}`} className="parsed-jd-tag">
-              {String(item)}
-            </Tag>
-          )
-        ))}
-      </div>
-    )
-  }
-
-  if (value && typeof value === 'object') {
-    return (
-      <div className="parsed-jd-object">
-        {Object.entries(value).map(([childKey, childValue]) => (
-          <div key={`${keyPrefix}-${childKey}`} className="parsed-jd-subsection">
-            <Text strong>{titleize(childKey)}</Text>
-            {renderParsedValue(childValue, `${keyPrefix}-${childKey}`)}
-          </div>
-        ))}
-      </div>
-    )
-  }
-
-  return <Text>{String(value)}</Text>
-}
-
-function ParsedJdPreview({ data }) {
-  if (!data) return null
-
-  const entries = Object.entries(data).filter(([, value]) => {
-    if (value === null || value === undefined || value === '') return false
-    if (Array.isArray(value)) return value.length > 0
-    if (typeof value === 'object') return Object.keys(value).length > 0
-    return true
-  })
-  const priorityEntries = PRIORITY_FIELDS
-    .filter((key) => data[key] !== undefined && data[key] !== null && data[key] !== '')
-    .map((key) => [key, data[key]])
-  const detailEntries = entries.filter(([key]) => !PRIORITY_FIELDS.includes(key))
-
-  return (
-    <div className="parsed-jd-preview">
-      <div className="parsed-jd-preview-header">
-        <div>
-          <Title level={5} style={{ margin: 0 }}>
-            Parsed JD Details
-          </Title>
-          <Text type="secondary">Review everything returned by the parser before creating the job.</Text>
-        </div>
-      </div>
-
-      {priorityEntries.length > 0 && (
-        <div className="parsed-jd-summary-grid">
-          {priorityEntries.map(([key, value]) => (
-            <div key={key} className="parsed-jd-summary-item">
-              <Text type="secondary">{titleize(key)}</Text>
-              <Text strong>{String(value)}</Text>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="parsed-jd-sections">
-        {detailEntries.map(([key, value]) => (
-          <section key={key} className="parsed-jd-section">
-            <Title level={5} className="parsed-jd-section-title">
-              {titleize(key)}
-            </Title>
-            {renderParsedValue(value, key)}
-          </section>
-        ))}
-      </div>
-    </div>
-  )
 }
 
 /**
@@ -193,6 +307,14 @@ export function JobForm({ open, job, onClose, onSave, actionLoading = false }) {
       return false
     },
     [form, message],
+  )
+
+  const handleParsedJdChange = useCallback(
+    (nextParsedJd) => {
+      setParsedJd(nextParsedJd)
+      form.setFieldValue('jdParsed', JSON.stringify(nextParsedJd))
+    },
+    [form],
   )
 
   if (!open) return null
@@ -268,7 +390,7 @@ export function JobForm({ open, job, onClose, onSave, actionLoading = false }) {
               />
             )}
 
-            <ParsedJdPreview data={parsedJd} />
+            <ParsedJdEditor data={parsedJd} onChange={handleParsedJdChange} />
 
             <Divider />
           </>

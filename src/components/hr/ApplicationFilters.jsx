@@ -9,18 +9,6 @@ const STATUS_OPTIONS = [
   { value: 'rejected', label: 'Rejected' },
 ]
 
-/**
- * ApplicationFilters
- * Provides job and status filter dropdowns for the Applications page.
- *
- * @param {object} props
- * @param {Array} props.jobs
- * @param {string|null} props.selectedJobId
- * @param {string|null} props.selectedStatus
- * @param {Function} props.onJobChange
- * @param {Function} props.onStatusChange
- * @param {boolean} [props.jobsLoading=false]
- */
 export function ApplicationFilters({
   jobs,
   selectedJobId,
@@ -28,6 +16,7 @@ export function ApplicationFilters({
   onJobChange,
   onStatusChange,
   jobsLoading = false,
+  actions = null,
 }) {
   return (
     <Row gutter={12} wrap className="mb-4">
@@ -54,6 +43,12 @@ export function ApplicationFilters({
           options={STATUS_OPTIONS}
         />
       </Col>
+
+      {actions ? (
+        <Col flex="auto" style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          {actions}
+        </Col>
+      ) : null}
     </Row>
   )
 }

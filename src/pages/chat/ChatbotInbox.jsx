@@ -92,7 +92,7 @@ function DisabledChatPanel({ session }) {
     <div
       style={{
         height: '100%',
-        minHeight: 520,
+        minHeight: 0,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -312,7 +312,16 @@ function ChatbotInbox() {
   const enabledCount = sessions.filter((s) => s.is_enabled).length
 
   return (
-    <div className="fade-in-up">
+    <div
+      className="fade-in-up"
+      style={{
+        height: 'calc(100vh - var(--header-height) - 48px)',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+        overflow: 'hidden',
+      }}
+    >
       <div
         style={{
           display: 'flex',
@@ -325,11 +334,11 @@ function ChatbotInbox() {
       >
         <div>
           <Title level={3} style={{ margin: 0 }}>
-            AI Chatbot
+            {isHR ? 'Candidate Chats' : 'AI Chatbot'}
           </Title>
           <Text type="secondary">
             {isHR
-              ? 'Manage all candidate conversations from one place'
+              ? 'Manage candidate conversations and chat access from one place'
               : 'All your shortlisted job assistants in one inbox'}
           </Text>
         </div>
@@ -348,12 +357,17 @@ function ChatbotInbox() {
       )}
 
       {!error && (
-        <Card bodyStyle={{ padding: 0 }}>
+        <Card
+          style={{ flex: 1, minHeight: 0 }}
+          bodyStyle={{ padding: 0, height: '100%' }}
+        >
           <div
             style={{
               display: 'grid',
               gridTemplateColumns: 'minmax(260px, 340px) minmax(0, 1fr)',
-              minHeight: 'calc(100vh - 210px)',
+              height: '100%',
+              minHeight: 0,
+              overflow: 'hidden',
             }}
           >
             {/* ── Sidebar ── */}
@@ -361,7 +375,10 @@ function ChatbotInbox() {
               style={{
                 borderRight: '1px solid #f0f0f0',
                 background: '#fff',
-                minHeight: 520,
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
               }}
             >
               <div
@@ -388,7 +405,7 @@ function ChatbotInbox() {
               </div>
 
               {loading ? (
-                <div style={{ padding: 16 }}>
+                <div style={{ padding: 16, overflowY: 'auto' }}>
                   <Skeleton active paragraph={{ rows: 8 }} />
                 </div>
               ) : sessions.length === 0 ? (
@@ -398,9 +415,10 @@ function ChatbotInbox() {
                   style={{ marginTop: 56 }}
                 />
               ) : (
-                <List
-                  dataSource={sessions}
-                  renderItem={(session) => {
+                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+                  <List
+                    dataSource={sessions}
+                    renderItem={(session) => {
                     const selected = activeSessionId === session.id
                     const isDisabled = !session.is_enabled
 
@@ -486,12 +504,13 @@ function ChatbotInbox() {
                       </List.Item>
                     )
                   }}
-                />
+                  />
+                </div>
               )}
             </div>
 
             {/* ── Right pane ── */}
-            <div style={{ minWidth: 0, minHeight: 520 }}>
+            <div style={{ minWidth: 0, minHeight: 0, overflow: 'hidden' }}>
               {activeSession ? (
                 // Show disabled panel for candidates whose session is off
                 !isHR && !activeSession.is_enabled ? (
@@ -508,7 +527,7 @@ function ChatbotInbox() {
                 <div
                   style={{
                     height: '100%',
-                    minHeight: 520,
+                    minHeight: 0,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

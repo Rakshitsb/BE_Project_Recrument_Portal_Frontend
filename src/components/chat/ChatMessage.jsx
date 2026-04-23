@@ -8,6 +8,19 @@ import {
   UserOutlined,
 } from '@ant-design/icons'
 
+const typingAnimationStyles = `
+  @keyframes chatTypingPulse {
+    0%, 80%, 100% {
+      transform: translateY(0);
+      opacity: 0.35;
+    }
+    40% {
+      transform: translateY(-4px);
+      opacity: 1;
+    }
+  }
+`
+
 function formatTime(timestamp) {
   if (!timestamp) return ''
 
@@ -121,55 +134,84 @@ function ChatMessage({ message, isCurrentUser }) {
 
   if (message?.role === 'assistant') {
     return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'flex-start',
-          marginBottom: 16,
-          alignItems: 'flex-start',
-          gap: 8,
-        }}
-      >
-        <Avatar
-          size={32}
-          icon={<RobotOutlined />}
-          style={{ backgroundColor: '#52c41a', flexShrink: 0 }}
-        />
-        <div style={{ maxWidth: '70%' }}>
-          <div
-            style={{
-              color: '#52c41a',
-              fontSize: 11,
-              fontWeight: 600,
-              marginBottom: 4,
-            }}
-          >
-            AI Assistant
-          </div>
-          <div
-            style={{
-              backgroundColor: '#f0f0f0',
-              color: '#1f1f1f',
-              borderRadius: '4px 18px 18px 18px',
-              padding: '10px 14px',
-              wordBreak: 'break-word',
-            }}
-          >
-            {message?.content}
-          </div>
-          {time && (
+      <>
+        {message?.isTyping && <style>{typingAnimationStyles}</style>}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-start',
+            marginBottom: 16,
+            alignItems: 'flex-start',
+            gap: 8,
+          }}
+        >
+          <Avatar
+            size={32}
+            icon={<RobotOutlined />}
+            style={{ backgroundColor: '#52c41a', flexShrink: 0 }}
+          />
+          <div style={{ maxWidth: '70%' }}>
             <div
               style={{
+                color: '#52c41a',
                 fontSize: 11,
-                color: 'rgba(0,0,0,0.35)',
-                marginTop: 4,
+                fontWeight: 600,
+                marginBottom: 4,
               }}
             >
-              {time}
+              AI Assistant
             </div>
-          )}
+            <div
+              style={{
+                backgroundColor: '#f0f0f0',
+                color: '#1f1f1f',
+                borderRadius: '4px 18px 18px 18px',
+                padding: '10px 14px',
+                wordBreak: 'break-word',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 10,
+                minWidth: message?.isTyping ? 124 : undefined,
+              }}
+            >
+              {message?.isTyping ? (
+                <>
+                  <span style={{ color: '#595959', fontSize: 13 }}>Thinking</span>
+                  <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                    {[0, 1, 2].map((index) => (
+                      <span
+                        key={index}
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          backgroundColor: '#52c41a',
+                          display: 'inline-block',
+                          animation: 'chatTypingPulse 1.2s ease-in-out infinite',
+                          animationDelay: `${index * 0.18}s`,
+                        }}
+                      />
+                    ))}
+                  </span>
+                </>
+              ) : (
+                message?.content
+              )}
+            </div>
+            {time && (
+              <div
+                style={{
+                  fontSize: 11,
+                  color: 'rgba(0,0,0,0.35)',
+                  marginTop: 4,
+                }}
+              >
+                {time}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 

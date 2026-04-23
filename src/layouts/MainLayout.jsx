@@ -34,7 +34,7 @@ const hrMenuItems = [
   { key: '/hr',              icon: <DashboardOutlined />, label: 'Dashboard' },
   { key: '/hr/jobs',         icon: <SolutionOutlined />,  label: 'Manage Jobs' },
   { key: '/hr/applications', icon: <TeamOutlined />,      label: 'Applications' },
-  { key: '/hr/chatbot',      icon: <MessageOutlined />,   label: 'AI Chatbot' },
+  { key: '/hr/chatbot',      icon: <MessageOutlined />,   label: 'Candidate Chats' },
   { key: '/hr/interviews',   icon: <VideoCameraOutlined />, label: 'Interviews' },
   { key: '/hr/interviewers', icon: <RobotOutlined />,       label: 'Interviewers' },
 ]

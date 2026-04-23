@@ -2,6 +2,7 @@ import { Avatar, Card, Descriptions, Divider, Select, Tag, Tooltip, Typography }
 import { UserOutlined } from '@ant-design/icons'
 
 import { StatusBadge } from '../ui/StatusBadge'
+import { MatchAnalysisCard } from './MatchInsights'
 
 const { Paragraph, Text, Title } = Typography
 
@@ -15,17 +16,14 @@ const STATUS_OPTIONS = [
 ]
 
 const NA = () => <Text type="secondary" italic>Not available</Text>
-
 const isMissing = (value) => !value || value === '-'
 
 function getAllowedStatusOptions(currentStatus) {
   const workflowOrder = ['applied', 'under_review', 'shortlisted', 'interview']
   const terminalStatuses = ['selected', 'rejected']
-
   if (terminalStatuses.includes(currentStatus)) {
     return STATUS_OPTIONS.filter((option) => option.value === currentStatus)
   }
-
   return STATUS_OPTIONS.filter((option) => {
     if (terminalStatuses.includes(option.value)) return true
     if (!workflowOrder.includes(currentStatus) || !workflowOrder.includes(option.value)) return false
@@ -33,13 +31,20 @@ function getAllowedStatusOptions(currentStatus) {
   })
 }
 
-export function ApplicantCard({ applicant, onStatusChange, statusUpdating = false }) {
+export function ApplicantCard({
+  applicant,
+  onStatusChange,
+  statusUpdating = false,
+  matchData = null,
+}) {
   const isFallbackName = applicant.candidateName?.startsWith('Candidate ')
   const showExperienceFallback = applicant.experienceYears === '-' || applicant.experienceYears === ''
   const allowedStatusOptions = getAllowedStatusOptions(applicant.status)
 
   return (
     <Card>
+      <MatchAnalysisCard matchData={matchData} />
+
       <div className="mb-1 flex flex-col items-center text-center">
         {isFallbackName ? (
           <Tooltip title="Full candidate profile not yet available">

@@ -15,11 +15,13 @@ import useApiCall from '../../hooks/useApiCall'
 import applicationService from '../../services/applicationService'
 
 const { Title, Text } = Typography
+const NON_WITHDRAWABLE_STATUSES = new Set(['shortlisted', 'interview', 'selected', 'rejected'])
 
 // ── Sub-component: single application card ────────────────────────────────────
 function ApplicationCard({ app, onView, onWithdraw, withdrawingId }) {
   const companyName = app.company || 'Hiring Company'
   const initials = companyName[0].toUpperCase()
+  const withdrawDisabled = NON_WITHDRAWABLE_STATUSES.has(app.status)
 
   return (
     <Card
@@ -42,9 +44,10 @@ function ApplicationCard({ app, onView, onWithdraw, withdrawingId }) {
           icon={<DeleteOutlined />}
           size="small"
           loading={withdrawingId === app.id}
+          disabled={withdrawDisabled}
           onClick={() => onWithdraw(app.id)}
         >
-          Withdraw
+          {withdrawDisabled ? 'Cannot Withdraw' : 'Withdraw'}
         </Button>,
       ]}
     >

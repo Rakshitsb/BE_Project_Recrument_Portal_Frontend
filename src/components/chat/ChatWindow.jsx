@@ -49,6 +49,16 @@ function ChatWindow({
   }, [loadHRSession])
 
   const messages = isHR ? (hrSession?.messages || []) : candidateChat.messages
+  const visibleMessages = !isHR && candidateChat.sending
+    ? [
+        ...messages,
+        {
+          id: 'assistant-typing',
+          role: 'assistant',
+          isTyping: true,
+        },
+      ]
+    : messages
   const loading = isHR ? hrLoading : candidateChat.loading
   const sending = isHR ? hrSending : candidateChat.sending
   const error = isHR ? hrError : candidateChat.error
@@ -56,7 +66,7 @@ function ChatWindow({
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages.length])
+  }, [visibleMessages.length])
 
   const handleSend = async () => {
     const trimmed = input.trim()
@@ -146,14 +156,14 @@ function ChatWindow({
           <div style={{ textAlign: 'center', padding: '48px 0' }}>
             <Spin tip="Loading chat..." />
           </div>
-        ) : messages.length === 0 ? (
+        ) : visibleMessages.length === 0 ? (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description="No messages yet"
             style={{ marginTop: 48 }}
           />
         ) : (
-          messages.map((message) => (
+          visibleMessages.map((message) => (
             <ChatMessage
               key={message.id}
               message={message}

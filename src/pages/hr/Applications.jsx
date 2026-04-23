@@ -1,20 +1,25 @@
-import { Alert, Button, Col, Result, Row, Skeleton, Tag } from 'antd'
-import { SolutionOutlined, UserOutlined }                 from '@ant-design/icons'
-import { useNavigate }                                    from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Alert, Button, Col, Result, Row, Skeleton, Space, Tag, Typography } from 'antd'
+import {
+  CheckOutlined,
+  SearchOutlined,
+  SolutionOutlined,
+  UserOutlined,
+} from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
 
-import { ApplicantCard }      from '../../components/hr/ApplicantCard'
+import { ApplicantCard } from '../../components/hr/ApplicantCard'
 import { ApplicationFilters } from '../../components/hr/ApplicationFilters'
+import { MatchBadge } from '../../components/hr/MatchInsights'
 import { DataTable, EmptyState, PageHeader, StatusBadge } from '../../components/ui'
-import { useApplications }    from '../../hooks/useApplications'
+import { useApplications } from '../../hooks/useApplications'
 
-/**
- * Applications
- * HR page for reviewing and managing candidate applications.
- * Fetches applications per selected job and supports optimistic status updates.
- */
+const { Link, Text } = Typography
+
 export function Applications() {
   const navigate = useNavigate()
   const {
+    applications,
     jobs,
     filteredApps,
     jobsLoading,
@@ -26,21 +31,117 @@ export function Applications() {
     selectedStatus,
     selectedApp,
     setSelectedStatus,
+    handleView,
     handleJobChange,
     handleStatusChange,
     loadJobs,
     loadApplications,
+    fetchRankedCandidatesApi,
   } = useApplications()
 
+  const [isRankedMode, setIsRankedMode] = useState(false)
+  const [rankedData, setRankedData] = useState(null)
+  const [rankingLoading, setRankingLoading] = useState(false)
+  const [rankingError, setRankingError] = useState(null)
+  const [selectedCandidateRank, setSelectedCandidateRank] = useState(null)
+
+  const resetRanking = () => {
+    setIsRankedMode(false)
+    setRankedData(null)
+    setSelectedCandidateRank(null)
+    setRankingError(null)
+  }
+
+  const fetchRankedCandidates = async () => {
+    if (!selectedJobId) return
+    setRankingLoading(true)
+    setRankingError(null)
+    try {
+      const data = await fetchRankedCandidatesApi(selectedJobId)
+      setRankedData(data)
+      setIsRankedMode(true)
+    } catch {
+      setRankingError('Could not load match rankings. Please try again.')
+    } finally {
+      setRankingLoading(false)
+    }
+  }
+
+  const handleJobFilterChange = (jobId) => {
+    resetRanking()
+    handleJobChange(jobId)
+  }
+
+  const displayList = useMemo(() => {
+    if (!isRankedMode || !rankedData) return filteredApps
+
+    const rankedCandidates = Array.isArray(rankedData.ranked_candidates)
+      ? rankedData.ranked_candidates
+      : []
+    const applicationById = new Map(filteredApps.map((app) => [app.id, app]))
+    const rankedIds = rankedCandidates.map((candidate) => candidate.application_id)
+    const rankedApplications = rankedIds
+      .map((id) => applicationById.get(id))
+      .filter(Boolean)
+    const unrankedApplications = filteredApps.filter((app) => !rankedIds.includes(app.id))
+
+    return [...rankedApplications, ...unrankedApplications]
+  }, [filteredApps, isRankedMode, rankedData])
+
+  useEffect(() => {
+    if (!selectedApp || !isRankedMode || !rankedData) {
+      setSelectedCandidateRank(null)
+      return
+    }
+    const matchData = rankedData.ranked_candidates.find(
+      (candidate) => candidate.application_id === selectedApp.id,
+    )
+    setSelectedCandidateRank(matchData ?? null)
+  }, [isRankedMode, rankedData, selectedApp])
+
+  useEffect(() => {
+    if (!selectedApp || applications.some((app) => app.id === selectedApp.id)) return
+    setSelectedCandidateRank(null)
+  }, [applications, selectedApp])
+
   const columns = [
-    { title: 'Candidate', dataIndex: 'candidateName', key: 'candidateName' },
+    {
+      title: 'Candidate',
+      dataIndex: 'candidateName',
+      key: 'candidateName',
+      render: (_, record) => {
+        const rank = rankedData?.ranked_candidates.find((item) => item.application_id === record.id)
+        return (
+          <span>
+            {record.candidateName}
+            {isRankedMode && rank ? <MatchBadge percentage={rank.match_percentage} /> : null}
+          </span>
+        )
+      },
+    },
     { title: 'Job', dataIndex: 'jobTitle', key: 'jobTitle' },
     { title: 'Applied', dataIndex: 'appliedDate', key: 'appliedDate' },
-    { title: 'Status', dataIndex: 'status', key: 'status', render: (status) => <StatusBadge status={status} /> },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status) => <StatusBadge status={status} />,
+    },
     {
       title: 'Action',
       key: 'action',
-      render: (_, record) => <Button type="text" size="small" onClick={() => navigate(`/hr/applications/${record.id}`)}>View</Button>,
+      render: (_, record) => (
+        <Button
+          type="text"
+          size="small"
+          onClick={(event) => {
+            event.stopPropagation()
+            navigate(`/hr/applications/${record.id}`)
+          }}
+        >
+          View
+        </Button>
+      ),
     },
   ]
 
@@ -72,9 +173,14 @@ export function Applications() {
         <Col xs={24} lg={14}>
           <DataTable
             columns={columns}
-            dataSource={filteredApps}
+            dataSource={displayList}
             emptyText="No applications match the current filters."
-            extraProps={{ onRow: (record) => ({ onClick: () => navigate(`/hr/applications/${record.id}`), className: 'cursor-pointer' }) }}
+            extraProps={{
+              onRow: (record) => ({
+                onClick: () => handleView(record),
+                className: 'cursor-pointer',
+              }),
+            }}
           />
         </Col>
 
@@ -84,6 +190,7 @@ export function Applications() {
               applicant={selectedApp}
               onStatusChange={handleStatusChange}
               statusUpdating={statusUpdating}
+              matchData={isRankedMode ? selectedCandidateRank : null}
             />
           ) : (
             <EmptyState
@@ -101,16 +208,16 @@ export function Applications() {
       <PageHeader
         title="Applications"
         subtitle="Review and manage candidate applications"
-        actions={<Tag color="blue">{filteredApps.length} Applications</Tag>}
-      />
-
-      <Alert
-        className="mb-4"
-        type="info"
-        showIcon
-        closable
-        message="Phase 1 — Limited candidate details"
-        description="Full candidate profiles (name, skills, education) will be available after Phase 2 API enrichment. Application status management is fully functional."
+        actions={(
+          <Space size="small">
+            {isRankedMode && rankedData?.note ? (
+              <Text type="secondary" style={{ fontSize: 12, maxWidth: 320 }}>
+                {rankedData.note}
+              </Text>
+            ) : null}
+            <Tag color="blue">{displayList.length} Applications</Tag>
+          </Space>
+        )}
       />
 
       {jobsError && (
@@ -124,13 +231,40 @@ export function Applications() {
         />
       )}
 
+      {rankingError && (
+        <Alert
+          className="mb-4"
+          type="error"
+          showIcon
+          message="Could not load match rankings"
+          description={rankingError}
+          action={<Button size="small" onClick={fetchRankedCandidates}>Retry</Button>}
+        />
+      )}
+
       <ApplicationFilters
         jobs={jobs}
         selectedJobId={selectedJobId}
         selectedStatus={selectedStatus}
-        onJobChange={handleJobChange}
+        onJobChange={handleJobFilterChange}
         onStatusChange={setSelectedStatus}
         jobsLoading={jobsLoading}
+        actions={(
+          <Space size="middle">
+            <Button
+              type={isRankedMode ? 'default' : 'primary'}
+              icon={isRankedMode ? <CheckOutlined /> : <SearchOutlined />}
+              onClick={fetchRankedCandidates}
+              loading={rankingLoading}
+              disabled={!selectedJobId}
+            >
+              {isRankedMode ? 'Showing Best Match' : 'Find Best Match'}
+            </Button>
+            {isRankedMode ? (
+              <Link onClick={resetRanking}>Reset</Link>
+            ) : null}
+          </Space>
+        )}
       />
 
       {renderContent()}

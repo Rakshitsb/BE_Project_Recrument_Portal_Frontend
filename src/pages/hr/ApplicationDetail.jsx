@@ -190,9 +190,9 @@ export function ApplicationDetail() {
                 await disableChatbot(application.jobId, application.candidateId);
             }
             setChatbotEnabled(nextEnabled);
-            message.success(nextEnabled ? 'Chatbot enabled for candidate' : 'Chatbot disabled for candidate');
+            message.success(nextEnabled ? 'Chat access enabled for candidate' : 'Chat access disabled for candidate');
         } catch {
-            message.error('Failed to update chatbot status');
+            message.error('Failed to update chat access');
         } finally {
             setChatbotActionLoading(false);
         }
@@ -231,7 +231,7 @@ export function ApplicationDetail() {
                 showIcon
                 style={{ marginBottom: 24 }}
                 message="Candidate workflow"
-                description="Shortlist the candidate first. Once shortlisted, interview generation and chatbot controls become available on this page."
+                description="Shortlist the candidate first. Once shortlisted, interview generation and candidate chat controls become available on this page."
             />
 
             <Row gutter={[16, 16]}>
@@ -359,12 +359,12 @@ export function ApplicationDetail() {
 
                             <div style={{ padding: 12, borderRadius: 10, backgroundColor: '#f8fafc', border: '1px solid #e5e7eb' }}>
                                 <Text strong style={{ display: 'block', marginBottom: 4 }}>
-                                    AI Chatbot
+                                    Candidate Chat Access
                                 </Text>
                                 <Text type="secondary" style={{ display: 'block', fontSize: 12, marginBottom: 10 }}>
                                     {chatbotEnabled
-                                        ? 'Candidate can access the AI chatbot from their AI Chatbot tab.'
-                                        : 'Enable chatbot access for this candidate and job.'}
+                                        ? 'Candidate can access the AI chatbot from their candidate-side chatbot tab.'
+                                        : 'Enable candidate chat access for this job.'}
                                 </Text>
                                 <Button
                                     block
@@ -375,7 +375,7 @@ export function ApplicationDetail() {
                                     disabled={!isShortlisted || chatbotLoading || chatbotActionLoading}
                                     onClick={handleToggleChatbot}
                                 >
-                                    {chatbotEnabled ? 'Disable Chatbot' : 'Enable Chatbot'}
+                                    {chatbotEnabled ? 'Disable Chat Access' : 'Enable Chat Access'}
                                 </Button>
                             </div>
 
