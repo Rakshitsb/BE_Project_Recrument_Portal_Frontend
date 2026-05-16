@@ -1,23 +1,21 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Spin } from 'antd'
-import MainLayout    from '../layouts/MainLayout'
-import AuthLayout    from '../layouts/AuthLayout'
-import { AdminLayout }      from '../layouts/AdminLayout'
 import ProtectedRoute       from '../components/common/ProtectedRoute'
 import ProfileSetupGuard    from '../components/common/ProfileSetupGuard'
 import HRSetupGuard         from '../components/common/HRSetupGuard'
 import HRProfileSetupOnlyGuard from '../components/common/HRProfileSetupOnlyGuard'
 
 // ── Lazy-loaded pages ─────────────────────────────────────────────
+const MainLayout    = lazy(() => import('../layouts/MainLayout'))
+const AuthLayout    = lazy(() => import('../layouts/AuthLayout'))
+const AdminLayout   = lazy(() => import('../layouts/AdminLayout').then(m => ({ default: m.AdminLayout })))
+
 const LoginPage     = lazy(() => import('../pages/auth/LoginPage'))
 const RegisterPage  = lazy(() => import('../pages/auth/RegisterPage'))
 const ProfileSetup  = lazy(() => import('../pages/candidate/ProfileSetup'))
 
 // Candidate pages
-import InterviewTakePage from '../pages/candidate/InterviewTakePage'
-import InterviewResultsPage from '../pages/candidate/InterviewResultsPage'
-
 const CandidateDashboard = lazy(() => import('../pages/candidate/CandidateDashboard'))
 const JobsPage           = lazy(() => import('../pages/candidate/Jobs'))
 const MyApplications     = lazy(() => import('../pages/candidate/MyApplications'))
@@ -25,6 +23,8 @@ const JobDetailPage      = lazy(() => import('../pages/candidate/JobDetailPage')
 const CandidateProfile   = lazy(() => import('../pages/candidate/CandidateProfile'))
 const EditProfile        = lazy(() => import('../pages/candidate/EditProfile'))
 const ChatbotInbox       = lazy(() => import('../pages/chat/ChatbotInbox'))
+const InterviewTakePage  = lazy(() => import('../pages/candidate/InterviewTakePage'))
+const InterviewResultsPage = lazy(() => import('../pages/candidate/InterviewResultsPage'))
 
 // HR pages
 const HRDashboard    = lazy(() => import('../pages/hr/HRDashboard'))
