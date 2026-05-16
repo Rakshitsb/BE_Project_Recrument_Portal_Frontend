@@ -5,6 +5,7 @@ import { SendOutlined } from '@ant-design/icons'
 import ChatMessage from './ChatMessage'
 import useChatbot from '../../hooks/useChatbot'
 import { getHRChatSession, sendHRMessage } from '../../services/chatbotService'
+import useAuthStore from '../../store/authStore'
 
 const { Text } = Typography
 
@@ -14,6 +15,8 @@ function ChatWindow({
   candidateId,
   mode = 'candidate',
   readOnly = false,
+  candidateAvatarUrl = '',
+  companyLogoUrl = '',
 }) {
   const isHR = mode === 'hr'
   const bottomRef = useRef(null)
@@ -22,6 +25,7 @@ function ChatWindow({
   const [hrLoading, setHrLoading] = useState(false)
   const [hrSending, setHrSending] = useState(false)
   const [hrError, setHrError] = useState(null)
+  const { user } = useAuthStore()
 
   const candidateChat = useChatbot(!isHR ? jobId : null)
 
@@ -168,6 +172,9 @@ function ChatWindow({
               key={message.id}
               message={message}
               isCurrentUser={!isHR && message.role === 'user'}
+              userAvatarUrl={user?.avatarUrl || user?.avatar_url}
+              candidateAvatarUrl={candidateAvatarUrl || hrSession?.candidate_avatar_url}
+              hrAvatarUrl={companyLogoUrl}
             />
           ))
         )}

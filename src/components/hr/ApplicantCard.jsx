@@ -51,7 +51,7 @@ export function ApplicantCard({
             <Avatar size="large" className="mb-2.5 bg-neutral-500">?</Avatar>
           </Tooltip>
         ) : (
-          <Avatar size="large" icon={<UserOutlined />} className="mb-2.5 bg-blue-600" />
+          <Avatar size="large" src={applicant.candidateAvatarUrl || undefined} icon={<UserOutlined />} className="mb-2.5 bg-blue-600" />
         )}
 
         <Title level={5} className="!m-0">{applicant.candidateName}</Title>

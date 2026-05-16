@@ -44,7 +44,7 @@ export function UserDetailModal({ open, user, userType, onClose }) {
           textAlign:      'center',
         }}
       >
-        <Avatar size={64} icon={<UserOutlined />} style={{ backgroundColor: '#1677ff' }} />
+        <Avatar size={64} src={user.avatarUrl || undefined} icon={<UserOutlined />} style={{ backgroundColor: '#1677ff' }} />
         <Title level={4} style={{ margin: 0 }}>{user.name}</Title>
         <Text type="secondary">{user.email}</Text>
         <Text type="secondary">{user.phone}</Text>

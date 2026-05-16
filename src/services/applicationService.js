@@ -63,6 +63,7 @@ function normalizeApplication(data) {
     job_id: String(data.job_id ?? data.jobId ?? ''),
     job_title: data.job_title || data.jobTitle || data.title || 'Untitled Role',
     company,
+    companyLogoUrl: data.company_logo_url || data.companyLogoUrl || '',
     location: data.location || 'Not specified',
     job_type: data.job_type || data.jobType || 'Not specified',
     salary_range: data.salary_range || data.salaryRange || 'Not disclosed',

@@ -58,8 +58,8 @@ function JobDetailInfo({ job }) {
       </Button>
 
       <div className="flex items-start gap-4" style={{ marginBottom: 20 }}>
-        <Avatar size={64} style={{ backgroundColor: job.logoBg, fontSize: 22, fontWeight: 700, flexShrink: 0 }}>
-          {initials}
+        <Avatar size={64} src={job.companyLogoUrl || undefined} style={{ backgroundColor: job.logoBg, fontSize: 22, fontWeight: 700, flexShrink: 0 }}>
+          {!job.companyLogoUrl && initials}
         </Avatar>
         <div>
           <Title level={3} style={{ margin: 0 }}>{job.title}</Title>

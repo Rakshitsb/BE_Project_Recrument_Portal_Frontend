@@ -241,6 +241,7 @@ function LiveCallScreen({
             <SpeakerPanel
               title="You"
               transcript={lastUserResponse}
+              avatarSrc={user?.avatarUrl || user?.avatar_url}
               avatarIcon={<UserOutlined />}
               active={activeTurn === 'user'}
               accentColor="#6366f1"

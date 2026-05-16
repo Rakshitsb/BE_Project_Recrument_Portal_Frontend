@@ -40,9 +40,9 @@ export function CandidateTable({ candidates, onView, onDelete }) {
       title:     'Name',
       dataIndex: 'name',
       key:       'name',
-      render: (name) => (
+      render: (name, record) => (
         <Space size={8}>
-          <Avatar size="small" icon={<UserOutlined />} style={{ backgroundColor: '#1677ff' }} />
+          <Avatar size="small" src={record.avatarUrl || undefined} icon={<UserOutlined />} style={{ backgroundColor: '#1677ff' }} />
           <Text strong>{name}</Text>
         </Space>
       ),

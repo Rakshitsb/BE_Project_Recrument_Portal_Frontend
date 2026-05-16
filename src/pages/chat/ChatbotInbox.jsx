@@ -444,6 +444,7 @@ function ChatbotInbox() {
                               offset={[-2, 2]}
                             >
                               <Avatar
+                                src={isHR ? session.candidate_avatar_url || undefined : session.company_logo_url || undefined}
                                 icon={
                                   !isHR && isDisabled
                                     ? <StopOutlined />
@@ -521,6 +522,8 @@ function ChatbotInbox() {
                     jobId={activeSession.job_id}
                     candidateId={activeSession.candidate_id}
                     jobTitle={getSessionSubtitle(activeSession, role)}
+                    candidateAvatarUrl={activeSession.candidate_avatar_url || ''}
+                    companyLogoUrl={activeSession.company_logo_url || ''}
                   />
                 )
               ) : (

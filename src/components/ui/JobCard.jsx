@@ -50,10 +50,11 @@ function JobCard({ job }) {
       <div className="flex items-start gap-3">
         <Avatar
           size={52}
+          src={job.companyLogoUrl || undefined}
           style={{ backgroundColor: job.logoBg }}
           className="font-semibold"
         >
-          {initials}
+          {!job.companyLogoUrl && initials}
         </Avatar>
         <div className="flex-1">
           <div className="flex items-start justify-between gap-2">

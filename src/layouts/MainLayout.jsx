@@ -364,6 +364,7 @@ function MainLayout({ role }) {
                 style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
               >
                 <Avatar
+                  src={user?.avatarUrl || user?.avatar_url || undefined}
                   style={{ backgroundColor: '#1890ff' }}
                   icon={<UserOutlined />}
                   size="small"

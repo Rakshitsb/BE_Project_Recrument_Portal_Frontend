@@ -20,9 +20,9 @@ export function AdminApplicationsTable({ applications }) {
       title:     'Candidate',
       dataIndex: 'candidateName',
       key:       'candidateName',
-      render: (name) => (
+      render: (name, record) => (
         <Space size={8}>
-          <Avatar size="small" icon={<UserOutlined />} style={{ backgroundColor: '#1677ff' }} />
+          <Avatar size="small" src={record.candidateAvatarUrl || undefined} icon={<UserOutlined />} style={{ backgroundColor: '#1677ff' }} />
           <Text strong>{name}</Text>
         </Space>
       ),
@@ -46,6 +46,12 @@ export function AdminApplicationsTable({ applications }) {
       title:     'Company',
       dataIndex: 'company',
       key:       'company',
+      render: (company, record) => (
+        <Space size={8}>
+          <Avatar size="small" src={record.companyLogoUrl || undefined} icon={<UserOutlined />} />
+          <Text>{company}</Text>
+        </Space>
+      ),
     },
     {
       title:     'HR Name',

@@ -53,8 +53,8 @@ function ApplicationCard({ app, onView, onWithdraw, withdrawingId }) {
     >
       {/* Header row */}
       <div className="flex items-start gap-3" style={{ marginBottom: 12 }}>
-        <Avatar size={48} style={{ backgroundColor: app.logoBg, fontWeight: 700, flexShrink: 0 }}>
-          {initials}
+        <Avatar size={48} src={app.companyLogoUrl || undefined} style={{ backgroundColor: app.logoBg, fontWeight: 700, flexShrink: 0 }}>
+          {!app.companyLogoUrl && initials}
         </Avatar>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">

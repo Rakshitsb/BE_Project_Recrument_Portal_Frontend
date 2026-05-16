@@ -7,12 +7,16 @@ import { HRProfileCard } from '../../components/hr/HRProfileCard'
 import { HRProfileEditForm } from '../../components/hr/HRProfileEditForm'
 import useApiCall from '../../hooks/useApiCall'
 import { hrProfileService } from '../../services'
+import useAuthStore from '../../store/authStore'
 
 export function HRProfile() {
   const { message } = App.useApp()
   const formRef = useRef(null)
+  const updateUser = useAuthStore((s) => s.updateUser)
 
   const [editMode, setEditMode] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [avatarProgress, setAvatarProgress] = useState(0)
 
   const { execute: fetchProfile, loading: fetchLoading, error, data } =
     useApiCall(hrProfileService.getProfile)
@@ -42,6 +46,22 @@ export function HRProfile() {
       message.success(profile?.id ? 'Profile updated successfully!' : 'Profile created successfully!')
     } catch {
       // error already handled in useApiCall
+    }
+  }
+
+  const handleAvatarUpload = async (file) => {
+    try {
+      setAvatarUploading(true)
+      setAvatarProgress(0)
+      const result = await hrProfileService.uploadAvatar(file, setAvatarProgress)
+      updateUser({ avatarUrl: result.url || result.secure_url })
+      await fetchProfile()
+      message.success('Profile photo updated.')
+    } catch {
+      message.error('Failed to upload profile photo.')
+    } finally {
+      setAvatarUploading(false)
+      setAvatarProgress(0)
     }
   }
 
@@ -120,6 +140,9 @@ export function HRProfile() {
           ref={formRef}
           profile={profile || {}}
           onSave={handleSave}
+          onAvatarUpload={handleAvatarUpload}
+          avatarUploading={avatarUploading}
+          avatarProgress={avatarProgress}
         />
       ) : (
         <HRProfileCard profile={profile} />

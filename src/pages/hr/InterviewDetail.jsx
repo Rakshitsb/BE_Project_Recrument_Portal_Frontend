@@ -118,6 +118,7 @@ export function InterviewDetail() {
         primaryResponse?.name ||
         `Candidate ${interview?.candidate_id?.slice(-4) || ''}`;
     const candidateEmail = candidateInfo?.candidateEmail || primaryResponse?.email || 'Email not available';
+    const candidateAvatarUrl = candidateInfo?.candidateAvatarUrl || interview?.candidate_avatar_url || '';
     const candidateSkills = candidateInfo?.skills || [];
 
     return (
@@ -192,8 +193,8 @@ export function InterviewDetail() {
 
                     <Card size="small" style={{ borderRadius: 10, marginBottom: 16, borderColor: '#ccfbf1', backgroundColor: '#f0fdfa' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                            <Avatar size={44} style={{ backgroundColor: '#0d9488' }} icon={<UserOutlined />}>
-                                {candidateName?.charAt(0)?.toUpperCase()}
+                            <Avatar size={44} src={candidateAvatarUrl || undefined} style={{ backgroundColor: '#0d9488' }} icon={<UserOutlined />}>
+                                {!candidateAvatarUrl && candidateName?.charAt(0)?.toUpperCase()}
                             </Avatar>
                             <div style={{ minWidth: 0 }}>
                                 <Text strong style={{ display: 'block', fontSize: 15 }}>{candidateName}</Text>

@@ -94,6 +94,7 @@ function useAuth() {
           try {
             const hrProfile = await hrProfileService.getProfile(token)
             profileCompleted = Boolean(hrProfile)
+            user.avatarUrl = hrProfile?.avatarUrl || ''
           } catch (err) {
             // 404 = profile not created yet (new HR user)
             // 403 = role mismatch in DB (treat same as not-set-up)
@@ -109,6 +110,7 @@ function useAuth() {
           try {
             const candidateProfile = await profileService.getProfile(token)
             profileCompleted = Boolean(candidateProfile)
+            user.avatarUrl = candidateProfile?.avatarUrl || candidateProfile?.avatar_url || ''
           } catch (err) {
             if (err.response?.status === 404) {
               profileCompleted = false
@@ -123,6 +125,7 @@ function useAuth() {
           role:             user.role,
           name:             credentials.email.split('@')[0], // fallback display name
           profileCompleted,
+          avatarUrl:        user.avatarUrl || '',
         }
 
         storeLogin(userData, token)

@@ -34,6 +34,7 @@ function ProfileSetup() {
     handleSubmit,
     resumeUploading,
     avatarUploading,
+    avatarProgress,
     submitting,
     resumeParsed,
   } = useProfileSetup(form)
@@ -83,6 +84,7 @@ function ProfileSetup() {
               avatarUrl={profileData.avatarUrl}
               onUpload={handleAvatarUpload}
               uploading={avatarUploading}
+              progress={avatarProgress}
             />
           </Col>
 

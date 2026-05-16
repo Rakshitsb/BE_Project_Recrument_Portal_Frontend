@@ -38,14 +38,20 @@ export function AdminJobsTable({ jobs, onView }) {
       title:     'Company',
       dataIndex: 'company',
       key:       'company',
+      render: (company, record) => (
+        <Space size={8}>
+          <Avatar size="small" src={record.companyLogoUrl || undefined} icon={<UserOutlined />} />
+          <Text>{company}</Text>
+        </Space>
+      ),
     },
     {
       title:     'HR Name',
       dataIndex: 'hrName',
       key:       'hrName',
-      render: (name) => (
+      render: (name, record) => (
         <Space size={8}>
-          <Avatar size="small" icon={<UserOutlined />} />
+          <Avatar size="small" src={record.companyLogoUrl || undefined} icon={<UserOutlined />} />
           <Text>{name}</Text>
         </Space>
       ),

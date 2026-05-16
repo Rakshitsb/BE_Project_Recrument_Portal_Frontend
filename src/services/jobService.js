@@ -95,6 +95,7 @@ function normalizeJob(data) {
     id: String(data.id ?? ''),
     title: data.title || 'Untitled Role',
     company,
+    companyLogoUrl: data.company_logo_url || data.companyLogoUrl || '',
     description: data.description || 'No description provided yet.',
     location: data.location || 'Remote',
     industry: data.industry || 'General',

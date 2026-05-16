@@ -1,5 +1,5 @@
-import { memo, useState, useCallback } from 'react'
-import { Upload, Avatar, Tooltip, Typography, Spin } from 'antd'
+import { memo, useState, useCallback, useEffect } from 'react'
+import { Upload, Avatar, Tooltip, Typography, Spin, Progress } from 'antd'
 import { CameraOutlined, UserOutlined } from '@ant-design/icons'
 
 const { Text } = Typography
@@ -9,15 +9,21 @@ const { Text } = Typography
  * Circular profile photo upload with live preview.
  * Validates file is an image before triggering onUpload.
  *
- * @param {{ avatarUrl: string, onUpload: (file: File) => void, uploading: boolean }} props
+ * @param {{ avatarUrl: string, onUpload: (file: File) => void, uploading: boolean, progress?: number }} props
  */
-const AvatarUpload = memo(function AvatarUpload({ avatarUrl, onUpload, uploading }) {
+const AvatarUpload = memo(function AvatarUpload({ avatarUrl, onUpload, uploading, progress = 0 }) {
   const [previewUrl, setPreviewUrl] = useState(avatarUrl || '')
+
+  useEffect(() => {
+    setPreviewUrl(avatarUrl || '')
+  }, [avatarUrl])
 
   const beforeUpload = useCallback(
     (file) => {
       const isImage = file.type.startsWith('image/')
+      const isSmallEnough = file.size <= 2 * 1024 * 1024
       if (!isImage) return Upload.LIST_IGNORE
+      if (!isSmallEnough) return Upload.LIST_IGNORE
 
       // Show instant local preview
       const objectUrl = URL.createObjectURL(file)
@@ -75,8 +81,11 @@ const AvatarUpload = memo(function AvatarUpload({ avatarUrl, onUpload, uploading
         </Tooltip>
       </Upload>
       <Text type="secondary" style={{ fontSize: 12 }}>
-        Click to upload photo
+        JPG, PNG or WEBP under 2 MB
       </Text>
+      {uploading && progress > 0 && (
+        <Progress percent={progress} size="small" style={{ width: 140 }} />
+      )}
     </div>
   )
 })

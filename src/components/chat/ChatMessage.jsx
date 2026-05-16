@@ -30,7 +30,7 @@ function formatTime(timestamp) {
   })
 }
 
-function ChatMessage({ message, isCurrentUser }) {
+function ChatMessage({ message, isCurrentUser, userAvatarUrl, candidateAvatarUrl, hrAvatarUrl }) {
   const time = formatTime(message?.timestamp)
 
   if (message?.role === 'user' && isCurrentUser) {
@@ -71,6 +71,7 @@ function ChatMessage({ message, isCurrentUser }) {
         </div>
         <Avatar
           size={32}
+          src={userAvatarUrl || undefined}
           icon={<UserOutlined />}
           style={{ backgroundColor: '#096dd9', flexShrink: 0 }}
         />
@@ -91,6 +92,7 @@ function ChatMessage({ message, isCurrentUser }) {
       >
         <Avatar
           size={32}
+          src={candidateAvatarUrl || undefined}
           icon={<UserOutlined />}
           style={{ backgroundColor: '#8c8c8c', flexShrink: 0 }}
         />
@@ -229,6 +231,7 @@ function ChatMessage({ message, isCurrentUser }) {
             }}
           >
             <CrownOutlined style={{ color: '#d48806' }} />
+            {hrAvatarUrl && <Avatar size={20} src={hrAvatarUrl} />}
             <span>HR Message</span>
           </div>
         }

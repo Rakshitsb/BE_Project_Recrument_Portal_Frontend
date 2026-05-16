@@ -1,4 +1,5 @@
-import { Card } from 'antd'
+import { Avatar, Card } from 'antd'
+import { UserOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 
 import { DataTable }   from '../ui/DataTable'
@@ -20,7 +21,12 @@ export function RecentApplicants({ applicants }) {
       title: 'Name',
       dataIndex: 'candidateName',
       key: 'name',
-      render: (_, record) => record.candidateName || record.name || 'Candidate',
+      render: (_, record) => (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <Avatar size="small" src={record.candidateAvatarUrl || undefined} icon={<UserOutlined />} />
+          {record.candidateName || record.name || 'Candidate'}
+        </span>
+      ),
     },
     {
       title: 'Job Title',

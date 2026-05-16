@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useMemo } from 'react'
+import { useEffect, useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Form,
@@ -30,6 +30,9 @@ import dayjs from 'dayjs'
 import useProfile from '../../hooks/useProfile'
 import PageHeader from '../../components/ui/PageHeader'
 import DynamicListField from '../../components/ui/DynamicListField'
+import AvatarUpload from '../../components/ui/AvatarUpload'
+import profileService from '../../services/profileService'
+import useAuthStore from '../../store/authStore'
 
 const { Text } = Typography
 const { TextArea } = Input
@@ -96,6 +99,9 @@ function EditProfile() {
   const navigate = useNavigate()
   const { message } = App.useApp()
   const [form] = Form.useForm()
+  const updateUser = useAuthStore((s) => s.updateUser)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [avatarProgress, setAvatarProgress] = useState(0)
 
   const { profile, loading, error, updating, fetchProfile, updateProfile } = useProfile()
 
@@ -163,6 +169,25 @@ function EditProfile() {
     [updateProfile, navigate, message],
   )
 
+  const handleAvatarUpload = useCallback(
+    async (file) => {
+      try {
+        setAvatarUploading(true)
+        setAvatarProgress(0)
+        const result = await profileService.uploadAvatar(file, setAvatarProgress)
+        updateUser({ avatarUrl: result.url || result.secure_url })
+        fetchProfile()
+        message.success('Profile photo updated.')
+      } catch {
+        message.error('Failed to upload profile photo. Please try again.')
+      } finally {
+        setAvatarUploading(false)
+        setAvatarProgress(0)
+      }
+    },
+    [fetchProfile, message, updateUser],
+  )
+
   return (
     <div className="fade-in-up">
       <PageHeader
@@ -197,6 +222,14 @@ function EditProfile() {
       {!loading && !error && (
         <Card className="card-shadow">
           <Form form={form} layout="vertical" requiredMark={false} size="large" onFinish={handleSubmit}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+              <AvatarUpload
+                avatarUrl={profile?.avatar_url || profile?.avatarUrl}
+                onUpload={handleAvatarUpload}
+                uploading={avatarUploading}
+                progress={avatarProgress}
+              />
+            </div>
             {sectionLabel('Personal Details')}
             <Row gutter={[16, 0]}>
               <Col xs={24} md={12}>

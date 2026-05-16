@@ -23,6 +23,8 @@ const toBackendProfile = (values) => ({
   company_location: values.companyLocation || values.company_location,
   industry:         values.industry,
   company_size:     values.companySize || values.company_size,
+  avatar_url:       values.avatarUrl || values.avatar_url || undefined,
+  avatar_public_id: values.avatarPublicId || values.avatar_public_id || undefined,
 })
 
 /**
@@ -42,6 +44,8 @@ const fromBackendProfile = (data) => ({
   companyLocation: data.company_location,
   industry:        data.industry,
   companySize:     data.company_size,
+  avatarUrl:       data.avatar_url || data.profile_image?.url || '',
+  avatarPublicId:  data.avatar_public_id || data.profile_image?.public_id || '',
   createdAt:       data.created_at,
 })
 
@@ -275,6 +279,7 @@ const fromBackendApplication = (data) => ({
   jobTitle:        data.job_title || '—',
   candidateId:     data.candidate_id,
   candidateName:   data.candidate_name  || `Candidate ${data.candidate_id?.slice(-4) || ''}`,
+  candidateAvatarUrl: data.candidate_avatar_url || data.candidateAvatarUrl || '',
   candidateEmail:  data.candidate_email || '—',
   candidatePhone:  data.candidate_phone || '—',
   location:        data.location        || '—',
@@ -314,6 +319,7 @@ const fromBackendDashboard = (data) => ({
       jobTitle: app.job_title || '-',
       candidateId: app.candidate_id,
       candidateName: app.candidate_name || `Candidate ${app.candidate_id?.slice(-4) || ''}`,
+      candidateAvatarUrl: app.candidate_avatar_url || '',
       candidateEmail: app.candidate_email || '-',
       status: app.status,
       appliedDate: app.created_at?.split('T')[0] || '-',
@@ -372,6 +378,19 @@ const hrProfileService = {
   updateProfile: async (values) => {
     const { data } = await api.put('/hr/profile', toBackendProfile(values))
     return fromBackendProfile(data)
+  },
+
+  uploadAvatar: async (file, onProgress) => {
+    const formData = new FormData()
+    formData.append('avatar', file)
+    const { data } = await api.post('/hr/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (event) => {
+        if (!event.total || !onProgress) return
+        onProgress(Math.round((event.loaded * 100) / event.total))
+      },
+    })
+    return data
   },
 
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Alert, Button, Col, Result, Row, Skeleton, Space, Tag, Typography } from 'antd'
+import { Alert, Avatar, Button, Col, Result, Row, Skeleton, Space, Tag, Typography } from 'antd'
 import {
   CheckOutlined,
   SearchOutlined,
@@ -112,7 +112,8 @@ export function Applications() {
       render: (_, record) => {
         const rank = rankedData?.ranked_candidates.find((item) => item.application_id === record.id)
         return (
-          <span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <Avatar size="small" src={record.candidateAvatarUrl || undefined} icon={<UserOutlined />} />
             {record.candidateName}
             {isRankedMode && rank ? <MatchBadge percentage={rank.match_percentage} /> : null}
           </span>

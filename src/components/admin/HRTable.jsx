@@ -40,10 +40,11 @@ export function HRTable({ hrUsers, onView, onDelete }) {
       title:     'Name',
       dataIndex: 'name',
       key:       'name',
-      render: (name) => (
+      render: (name, record) => (
         <Space size={8}>
           <Avatar
             size="small"
+            src={record.avatarUrl || undefined}
             icon={<IdcardOutlined />}
             style={{ backgroundColor: '#722ed1' }}
           />

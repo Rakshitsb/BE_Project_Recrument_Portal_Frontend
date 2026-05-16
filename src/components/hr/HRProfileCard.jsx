@@ -27,6 +27,7 @@ export function HRProfileCard({ profile }) {
           <div style={{ textAlign: 'center', marginBottom: 12 }}>
             <Avatar
               size={64}
+              src={profile.avatarUrl || profile.avatar_url || undefined}
               icon={<UserOutlined />}
               style={{ backgroundColor: '#1677ff', marginBottom: 12 }}
             />

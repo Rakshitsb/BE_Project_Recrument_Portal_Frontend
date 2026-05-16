@@ -118,8 +118,8 @@ function CandidateDashboard() {
   )
 
   // Open drawer for a specific job
-  const openChatDrawer = (jobId, jobTitle) => {
-    setActiveChat({ jobId, jobTitle })
+  const openChatDrawer = (jobId, jobTitle, companyLogoUrl = '') => {
+    setActiveChat({ jobId, jobTitle, companyLogoUrl })
     setDrawerOpen(true)
   }
 
@@ -215,8 +215,8 @@ function CandidateDashboard() {
               >
                 <List.Item.Meta
                   avatar={
-                    <Avatar style={{ backgroundColor: item.logoBg || '#1890ff' }}>
-                      {(item.company || 'H')[0]}
+                    <Avatar src={item.companyLogoUrl || undefined} style={{ backgroundColor: item.logoBg || '#1890ff' }}>
+                      {!item.companyLogoUrl && (item.company || 'H')[0]}
                     </Avatar>
                   }
                   title={item.job_title}
@@ -274,7 +274,8 @@ function CandidateDashboard() {
                     onClick={() =>
                       openChatDrawer(
                         app.job_id,
-                        app.job_title || 'Job'
+                        app.job_title || 'Job',
+                        app.companyLogoUrl || ''
                       )
                     }
                   >
@@ -348,6 +349,7 @@ function CandidateDashboard() {
           <ChatWindow
             jobId={activeChat.jobId}
             jobTitle={activeChat.jobTitle}
+            companyLogoUrl={activeChat.companyLogoUrl}
           />
         ) : (
           <Empty

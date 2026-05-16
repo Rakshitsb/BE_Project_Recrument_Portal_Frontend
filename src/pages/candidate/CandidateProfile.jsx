@@ -30,7 +30,7 @@ function ProfileSummaryCard({ profile }) {
           <Avatar
             size={100}
             icon={<UserOutlined />}
-            src={profile.avatar_url || undefined}
+            src={profile.avatar_url || profile.avatarUrl || undefined}
             style={{ backgroundColor: '#1677ff', marginBottom: 12 }}
           />
           <Title level={4} style={{ margin: 0 }}>{profile.full_name}</Title>

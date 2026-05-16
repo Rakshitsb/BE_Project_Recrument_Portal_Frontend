@@ -15,6 +15,7 @@ const useProfileStore = create((set) => ({
     education:   '',
     experience:  '',
     avatarUrl:   '',
+    avatarPublicId: '',
     resumeUrl:   '',
   },
 
@@ -43,6 +44,7 @@ const useProfileStore = create((set) => ({
         education:   '',
         experience:  '',
         avatarUrl:   '',
+        avatarPublicId: '',
         resumeUrl:   '',
       },
     }),

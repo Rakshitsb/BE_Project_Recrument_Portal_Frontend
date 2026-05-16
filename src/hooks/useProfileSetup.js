@@ -24,6 +24,7 @@ function useProfileSetup(form) {
 
   const [resumeUploading, setResumeUploading] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
+  const [avatarProgress, setAvatarProgress] = useState(0)
   const [submitting, setSubmitting]           = useState(false)
   const [resumeParsed, setResumeParsed]       = useState(false)
 
@@ -102,14 +103,17 @@ function useProfileSetup(form) {
   const handleAvatarUpload = useCallback(
     async (file) => {
       setAvatarUploading(true)
+      setAvatarProgress(0)
       try {
-        const result = await profileService.uploadAvatar(file)
-        updateField('avatarUrl', result.url)
+        const result = await profileService.uploadAvatar(file, setAvatarProgress)
+        updateField('avatarUrl', result.url || result.secure_url)
+        updateField('avatarPublicId', result.public_id)
         message.success('Profile photo updated!')
       } catch {
         message.error('Failed to upload photo. Please try again.')
       } finally {
         setAvatarUploading(false)
+        setAvatarProgress(0)
       }
     },
     [updateField, message],
@@ -138,7 +142,9 @@ function useProfileSetup(form) {
           experience:       Array.isArray(values.experience) ? values.experience : [],
           projects:         Array.isArray(values.projects)   ? values.projects   : [],
           bio:              values.bio              || null,
-          resumeUrl:        profileData.avatarUrl   || null,
+          resumeUrl:        profileData.resumeUrl   || null,
+          avatarUrl:        profileData.avatarUrl   || null,
+          avatarPublicId:   profileData.avatarPublicId || null,
           dob:              values.dob
                               ? values.dob.format('YYYY-MM-DD')
                               : null,
@@ -151,7 +157,11 @@ function useProfileSetup(form) {
         invalidateProfileCache()
 
         // ── Update user name in authStore ──
-        updateUser({ name: values.fullName, profileCompleted: true })
+        updateUser({
+          name: values.fullName,
+          profileCompleted: true,
+          avatarUrl: profileData.avatarUrl || null,
+        })
 
         message.success('🎉 Profile created! Welcome to HireBase.')
 
@@ -169,7 +179,7 @@ function useProfileSetup(form) {
         setSubmitting(false)
       }
     },
-    [profileData.avatarUrl, updateUser, message, navigate],
+    [profileData.avatarPublicId, profileData.avatarUrl, profileData.resumeUrl, updateUser, message, navigate],
   )
 
   return {
@@ -178,6 +188,7 @@ function useProfileSetup(form) {
     handleSubmit,
     resumeUploading,
     avatarUploading,
+    avatarProgress,
     submitting,
     resumeParsed,
   }

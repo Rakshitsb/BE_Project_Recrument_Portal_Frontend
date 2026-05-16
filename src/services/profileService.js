@@ -112,6 +112,8 @@ export const profileService = {
         experience:       profileData.experience      ?? [],
         projects:         profileData.projects        ?? [],
         resume_url:       profileData.resumeUrl       || null,
+        avatar_url:       profileData.avatarUrl       || profileData.avatar_url || null,
+        avatar_public_id: profileData.avatarPublicId  || profileData.avatar_public_id || null,
         bio:              profileData.bio             || null,
         gender:           profileData.gender          || null,
         dob,
@@ -132,12 +134,16 @@ export const profileService = {
   /**
    * Upload profile avatar image.
    */
-  uploadAvatar: async (file) => {
+  uploadAvatar: async (file, onProgress) => {
     try {
       const formData = new FormData()
       formData.append('avatar', file)
       const { data } = await api.post('/candidate/avatar', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (event) => {
+          if (!event.total || !onProgress) return
+          onProgress(Math.round((event.loaded * 100) / event.total))
+        },
       })
       return data
     } catch (err) {
@@ -165,7 +171,8 @@ export const profileService = {
         fullName:         data.full_name,
         experienceYears:  data.experience_years,
         resumeUrl:        data.resume_url,
-        avatarUrl:        data.avatar_url,
+        avatarUrl:        data.avatar_url || data.profile_image?.url,
+        avatarPublicId:   data.avatar_public_id || data.profile_image?.public_id,
         createdAt:        data.created_at,
         dob,
         gender,
@@ -200,6 +207,12 @@ export const profileService = {
         resume_url:       profileData.resume_url
                           || profileData.resumeUrl
                           || null,
+        avatar_url:       profileData.avatar_url
+                          || profileData.avatarUrl
+                          || undefined,
+        avatar_public_id: profileData.avatar_public_id
+                          || profileData.avatarPublicId
+                          || undefined,
       }
 
       const { data } = await api.put('/candidate/profile', payload)
@@ -211,7 +224,8 @@ export const profileService = {
         fullName:        data.full_name || payload.full_name,
         experienceYears: data.experience_years ?? payload.experience_years,
         resumeUrl:       data.resume_url ?? payload.resume_url,
-        avatarUrl:       data.avatar_url,
+        avatarUrl:       data.avatar_url || data.profile_image?.url,
+        avatarPublicId:  data.avatar_public_id || data.profile_image?.public_id,
         createdAt:       data.created_at,
         dob:             normalizedDob,
         gender:          normalizedGender,

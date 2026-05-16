@@ -11,6 +11,7 @@ import useAuthStore          from '../../store/authStore'
 import { hrProfileService }  from '../../services'
 import { PersonalInfoStep }  from '../../components/hr/setup/PersonalInfoStep'
 import { CompanyInfoStep }   from '../../components/hr/setup/CompanyInfoStep'
+import AvatarUpload from '../../components/ui/AvatarUpload'
 
 const { Title, Text } = Typography
 
@@ -36,6 +37,30 @@ export function HRProfileSetup() {
   const [currentStep, setCurrentStep] = useState(0)
   const [formData,    setFormData]    = useState({})
   const [submitting,  setSubmitting]  = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [avatarProgress, setAvatarProgress] = useState(0)
+  const [avatarData, setAvatarData] = useState({})
+
+  const handleAvatarUpload = async (file) => {
+    try {
+      setAvatarUploading(true)
+      setAvatarProgress(0)
+      const result = await hrProfileService.uploadAvatar(file, setAvatarProgress)
+      const nextAvatar = {
+        avatarUrl: result.url || result.secure_url,
+        avatarPublicId: result.public_id,
+      }
+      setAvatarData(nextAvatar)
+      setFormData((prev) => ({ ...prev, ...nextAvatar }))
+      updateUser({ avatarUrl: nextAvatar.avatarUrl })
+      message.success('Profile photo uploaded.')
+    } catch {
+      message.error('Failed to upload profile photo.')
+    } finally {
+      setAvatarUploading(false)
+      setAvatarProgress(0)
+    }
+  }
 
   // ── Submit: POST /hr/profile (upserts via backend), update store, redirect ─
   const handleSubmit = async () => {
@@ -46,7 +71,7 @@ export function HRProfileSetup() {
       const personalValues = Object.keys(formData).length > 0
         ? formData
         : personalForm.getFieldsValue(true)
-      const payload = { ...personalValues, ...companyValues }
+      const payload = { ...personalValues, ...companyValues, ...avatarData }
 
       try {
         await hrProfileService.createProfile(payload)
@@ -59,7 +84,7 @@ export function HRProfileSetup() {
         }
       }
 
-      updateUser({ profileCompleted: true })
+      updateUser({ profileCompleted: true, avatarUrl: payload.avatarUrl })
       message.success('Profile saved successfully!')
       setCurrentStep(2)
 
@@ -122,6 +147,17 @@ export function HRProfileSetup() {
           size="small"
           style={{ marginBottom: 32 }}
         />
+
+        {currentStep < 2 && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+            <AvatarUpload
+              avatarUrl={avatarData.avatarUrl}
+              onUpload={handleAvatarUpload}
+              uploading={avatarUploading}
+              progress={avatarProgress}
+            />
+          </div>
+        )}
 
         {/* ── Active step content ── */}
         {currentStep === 0 && <PersonalInfoStep form={personalForm} />}

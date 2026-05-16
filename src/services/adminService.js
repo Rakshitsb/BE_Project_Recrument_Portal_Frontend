@@ -21,6 +21,7 @@ const fromBackendCandidate = (data) => ({
                      ? data.education.map((e) => [e.degree, e.institution, e.year].filter(Boolean).join(', ')).join(' | ')
                      : data.education || '—',
   bio:             data.bio || '',
+  avatarUrl:       data.avatar_url || data.profile_image?.url || '',
   joinedDate:      data.created_at?.split('T')[0] || '—',
 })
 
@@ -42,6 +43,7 @@ const fromBackendHR = (data) => ({
   industry:        data.industry || '—',
   companySize:     data.company_size || '—',
   companyWebsite:  data.company_website || '',
+  avatarUrl:       data.avatar_url || data.profile_image?.url || '',
   totalJobsPosted: data.total_jobs_posted ?? data.totalJobsPosted ?? 0,
   status:          data.status || 'active',
   joinedDate:      data.created_at?.split('T')[0] || '—',
@@ -59,6 +61,7 @@ const fromBackendJob = (data) => ({
   title:               data.title,
   description:         data.description || '',
   requiredSkills:      data.required_skills || [],
+  companyLogoUrl:      data.company_logo_url || data.companyLogoUrl || '',
   company:             data.company_name || data.company || '—',
   hrName:              data.hr_name || data.hrName || '—',
   location:            data.location,
@@ -82,10 +85,12 @@ const fromBackendApplication = (data) => ({
   jobId:           data.job_id,
   jobTitle:        data.job_title || '—',
   candidateId:     data.candidate_id,
+  candidateAvatarUrl: data.candidate_avatar_url || data.candidateAvatarUrl || '',
   candidateName:   data.candidate_name || '—',
   candidateEmail:  data.candidate_email || '—',
   hrName:          data.hr_name || '—',
   company:         data.company_name || data.company || '—',
+  companyLogoUrl:  data.company_logo_url || data.companyLogoUrl || '',
   status:          data.status,
   experienceYears: data.experience_years ?? '—',
   location:        data.location || '—',

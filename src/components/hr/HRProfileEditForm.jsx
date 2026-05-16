@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle } from 'react'
 import { Col, Form, Input, Row, Select } from 'antd'
+import AvatarUpload from '../ui/AvatarUpload'
 
 const INDUSTRY_OPTIONS = [
   'IT & Software', 'Finance & Banking', 'Healthcare',
@@ -22,7 +23,7 @@ const COMPANY_SIZE_OPTIONS = ['1-10', '11-50', '51-200', '201-500', '500+'].map(
  * @param {object}   ref            - Forwarded ref; exposes { submit }
  */
 export const HRProfileEditForm = forwardRef(function HRProfileEditForm(
-  { profile, onSave },
+  { profile, onSave, onAvatarUpload, avatarUploading, avatarProgress },
   ref,
 ) {
   const [form] = Form.useForm()
@@ -37,6 +38,14 @@ export const HRProfileEditForm = forwardRef(function HRProfileEditForm(
 
   return (
     <Form form={form} layout="vertical" onFinish={onSave}>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+        <AvatarUpload
+          avatarUrl={profile?.avatarUrl || profile?.avatar_url}
+          onUpload={onAvatarUpload}
+          uploading={avatarUploading}
+          progress={avatarProgress}
+        />
+      </div>
       <Row gutter={16}>
 
         {/* ── Left column ─────────────────────────────────────── */}

@@ -238,8 +238,8 @@ export function ApplicationDetail() {
                 <Col xs={24} xl={16}>
                     <Card style={{ borderRadius: 14, marginBottom: 16 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-                            <Avatar size={68} style={{ backgroundColor: '#0d9488' }} icon={<UserOutlined />}>
-                                {application.candidateName?.charAt(0)?.toUpperCase()}
+                            <Avatar size={68} src={application.candidateAvatarUrl || undefined} style={{ backgroundColor: '#0d9488' }} icon={<UserOutlined />}>
+                                {!application.candidateAvatarUrl && application.candidateName?.charAt(0)?.toUpperCase()}
                             </Avatar>
                             <div>
                                 <Title level={4} style={{ margin: 0 }}>{application.candidateName}</Title>
