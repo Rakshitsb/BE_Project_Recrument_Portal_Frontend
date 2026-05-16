@@ -85,7 +85,7 @@ const fromBackendJob = (data) => ({
   isActive:            data.is_active,
   jdParsed:            data.jd_parsed || null,
   rawJdText:           data.raw_jd_text || '',
-  applicants:          0,
+  applicants:          data.applicants ?? data.applicant_count ?? 0,
   postedDate:          data.created_at?.split('T')[0] || '',
 })
 
@@ -291,6 +291,43 @@ const fromBackendApplication = (data) => ({
 
 // ── HR Profile Service ───────────────────────────────────────────
 
+const fromBackendDashboard = (data) => ({
+  stats: {
+    totalJobsPosted: data.stats?.total_jobs_posted ?? 0,
+    activeJobs: data.stats?.active_jobs ?? 0,
+    totalApplicants: data.stats?.total_applicants ?? 0,
+    positionsFilled: data.stats?.positions_filled ?? 0,
+  },
+  jobs: Array.isArray(data.jobs)
+    ? data.jobs.map((job) => ({
+      id: job.id,
+      title: job.title,
+      isActive: job.is_active,
+      applicants: job.applicants ?? 0,
+      postedDate: job.created_at?.split('T')[0] || '',
+    }))
+    : [],
+  recentApplicants: Array.isArray(data.recent_applicants)
+    ? data.recent_applicants.map((app) => ({
+      id: app.id,
+      jobId: app.job_id,
+      jobTitle: app.job_title || '-',
+      candidateId: app.candidate_id,
+      candidateName: app.candidate_name || `Candidate ${app.candidate_id?.slice(-4) || ''}`,
+      candidateEmail: app.candidate_email || '-',
+      status: app.status,
+      appliedDate: app.created_at?.split('T')[0] || '-',
+    }))
+    : [],
+})
+
+const dashboardService = {
+  getDashboard: async () => {
+    const { data } = await api.get('/hr/dashboard')
+    return fromBackendDashboard(data)
+  },
+}
+
 const hrProfileService = {
 
   /**
@@ -485,5 +522,5 @@ const applicationService = {
 }
 
 // ── Exports ──────────────────────────────────────────────────────
-export { hrProfileService, jobService, applicationService }
-export default { hrProfileService, jobService, applicationService }
+export { hrProfileService, jobService, applicationService, dashboardService }
+export default { hrProfileService, jobService, applicationService, dashboardService }

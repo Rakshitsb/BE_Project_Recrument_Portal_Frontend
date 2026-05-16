@@ -9,6 +9,81 @@ import { RecentActivityFeed }  from '../../components/admin/RecentActivityFeed'
 import { AdminQuickTables }    from '../../components/admin/AdminQuickTables'
 import { adminService } from '../../services'
 
+function formatDateTime(value) {
+  if (!value || value === '—' || value === 'â€”') return 'Recent'
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+function timestampValue(value) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime()
+}
+
+function isCurrentMonth(value) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return false
+
+  const now = new Date()
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth()
+}
+
+function buildActivities({ candidates, hrUsers, jobs, applications }) {
+  const candidateActivities = candidates.map((candidate) => ({
+    id: `candidate-${candidate.id}`,
+    type: 'new_candidate',
+    message: `${candidate.name} joined as a candidate`,
+    actor: candidate.email,
+    timestamp: formatDateTime(candidate.joinedDate),
+    sortTime: timestampValue(candidate.joinedDate),
+  }))
+
+  const hrActivities = hrUsers.map((hr) => ({
+    id: `hr-${hr.id}`,
+    type: 'new_hr',
+    message: `${hr.name} joined as an HR user`,
+    actor: hr.company,
+    timestamp: formatDateTime(hr.joinedDate),
+    sortTime: timestampValue(hr.joinedDate),
+  }))
+
+  const jobActivities = jobs.map((job) => ({
+    id: `job-${job.id}`,
+    type: 'new_job',
+    message: `${job.title} was posted`,
+    actor: job.company,
+    timestamp: formatDateTime(job.postedDate),
+    sortTime: timestampValue(job.postedDate),
+  }))
+
+  const applicationActivities = applications.map((application) => ({
+    id: `application-${application.id}`,
+    type: application.status === 'selected' ? 'hired' : 'application',
+    message: application.status === 'selected'
+      ? `${application.candidateName} was selected for ${application.jobTitle}`
+      : `${application.candidateName} applied for ${application.jobTitle}`,
+    actor: application.company,
+    timestamp: formatDateTime(application.appliedDate),
+    sortTime: timestampValue(application.appliedDate),
+  }))
+
+  return [
+    ...candidateActivities,
+    ...hrActivities,
+    ...jobActivities,
+    ...applicationActivities,
+  ]
+    .sort((a, b) => b.sortTime - a.sortTime)
+    .slice(0, 6)
+}
+
 /**
  * AdminDashboard
  * Platform-wide overview for admin users.
@@ -51,11 +126,16 @@ export function AdminDashboard() {
     totalJobs:         jobs.length,
     totalApplications: applications.length,
     activeJobs:        jobs.filter((j) => j.isActive).length,
-    hiredThisMonth:    applications.filter((a) => a.status === 'selected').length,
+    hiredThisMonth:    applications.filter((a) => a.status === 'selected' && isCurrentMonth(a.appliedDate)).length,
   }
 
-  const recentCandidates = candidates.slice(0, 5)
-  const recentHRUsers    = hrUsers.slice(0, 4)
+  const recentActivities = buildActivities({ candidates, hrUsers, jobs, applications })
+  const recentCandidates = [...candidates]
+    .sort((a, b) => timestampValue(b.joinedDate) - timestampValue(a.joinedDate))
+    .slice(0, 5)
+  const recentHRUsers    = [...hrUsers]
+    .sort((a, b) => timestampValue(b.joinedDate) - timestampValue(a.joinedDate))
+    .slice(0, 4)
 
   const headerActions = (
     <Space>
@@ -91,7 +171,7 @@ export function AdminDashboard() {
 
       <Row gutter={16}>
         <Col xs={24} lg={14}>
-          <RecentActivityFeed activities={[]} />
+          <RecentActivityFeed activities={recentActivities} />
         </Col>
 
         <Col xs={24} lg={10}>

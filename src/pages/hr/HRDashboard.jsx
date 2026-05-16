@@ -14,46 +14,48 @@ import { RecentApplicants }        from '../../components/hr/RecentApplicants'
 import { JobActivityList }         from '../../components/hr/JobActivityList'
 import useAuth                     from '../../hooks/useAuth'
 import useApiCall                  from '../../hooks/useApiCall'
-import { jobService }              from '../../services'
+import { dashboardService } from '../../services'
 
 /**
  * HRDashboard
  * Main overview page for the HR role.
- * Fetches live jobs via jobService.getMyJobs() and derives stats.
+ * Fetches the HR dashboard summary from one backend endpoint.
  * Shows loading skeleton while fetching, error+retry if fetch fails.
  */
 export function HRDashboard() {
   const navigate         = useNavigate()
   const { user }         = useAuth()
-  const { execute, loading, error, data } = useApiCall(jobService.getMyJobs)
+  const { execute, loading, error, data } = useApiCall(dashboardService.getDashboard)
 
-  useEffect(() => { execute() }, [])
+  useEffect(() => { execute() }, [execute])
 
   // ── Derived data ───────────────────────────────────────────────
-  const jobs = data || []
+  const jobs = data?.jobs || []
+  const recentApplicants = data?.recentApplicants || []
+  const dashboardStats = data?.stats || {}
 
   const stats = [
     {
       title: 'Total Jobs Posted',
-      value: jobs.length,
+      value: dashboardStats.totalJobsPosted ?? jobs.length,
       color: 'blue',
       icon: <SolutionOutlined />,
     },
     {
       title: 'Active Jobs',
-      value: jobs.filter((j) => j.isActive).length,
+      value: dashboardStats.activeJobs ?? jobs.filter((j) => j.isActive).length,
       color: 'green',
       icon: <CheckCircleOutlined />,
     },
     {
       title: 'Total Applicants',
-      value: jobs.reduce((sum, j) => sum + (j.applicants || 0), 0),
+      value: dashboardStats.totalApplicants ?? jobs.reduce((sum, j) => sum + (j.applicants || 0), 0),
       color: 'purple',
       icon: <TeamOutlined />,
     },
     {
       title: 'Positions Filled',
-      value: 0,
+      value: dashboardStats.positionsFilled ?? 0,
       color: 'orange',
       icon: <CalendarOutlined />,
     },
@@ -124,7 +126,7 @@ export function HRDashboard() {
       {/* ── Content Row ── */}
       <Row gutter={16}>
         <Col xs={24} lg={14}>
-          <RecentApplicants applicants={[]} />
+          <RecentApplicants applicants={recentApplicants} />
         </Col>
 
         <Col xs={24} lg={10}>

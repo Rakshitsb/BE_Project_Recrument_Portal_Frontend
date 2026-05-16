@@ -18,8 +18,9 @@ export function RecentApplicants({ applicants }) {
   const columns = [
     {
       title: 'Name',
-      dataIndex: 'name',
+      dataIndex: 'candidateName',
       key: 'name',
+      render: (_, record) => record.candidateName || record.name || 'Candidate',
     },
     {
       title: 'Job Title',

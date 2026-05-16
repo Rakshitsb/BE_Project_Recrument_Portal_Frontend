@@ -9,12 +9,14 @@ import api from './api'
 const fromBackendCandidate = (data) => ({
   id:              data.id,
   userId:          data.user_id ?? data.userId ?? data.id,
-  name:            data.full_name,
+  name:            data.full_name || data.name || '—',
   email:           data.email,
   phone:           data.phone || '—',
   location:        data.location || '—',
   skills:          data.skills || [],
   experienceYears: data.experience_years ?? 0,
+  totalApplications: data.total_applications ?? data.totalApplications ?? 0,
+  status:          data.status || 'active',
   education:       Array.isArray(data.education)
                      ? data.education.map((e) => [e.degree, e.institution, e.year].filter(Boolean).join(', ')).join(' | ')
                      : data.education || '—',
@@ -31,15 +33,17 @@ const fromBackendCandidate = (data) => ({
 const fromBackendHR = (data) => ({
   id:              data.id,
   userId:          data.user_id ?? data.userId ?? data.id,
-  name:            data.full_name,
+  name:            data.full_name || data.name || '—',
   email:           data.email,
   phone:           data.phone || '—',
   designation:     data.designation || '—',
-  company:         data.company_name,
+  company:         data.company_name || '—',
   companyLocation: data.company_location || '—',
   industry:        data.industry || '—',
   companySize:     data.company_size || '—',
   companyWebsite:  data.company_website || '',
+  totalJobsPosted: data.total_jobs_posted ?? data.totalJobsPosted ?? 0,
+  status:          data.status || 'active',
   joinedDate:      data.created_at?.split('T')[0] || '—',
 })
 

@@ -9,5 +9,5 @@
  */
 
 export { default as authService } from './authService'
-export { hrProfileService, jobService, applicationService } from './hrService'
+export { hrProfileService, jobService, applicationService, dashboardService } from './hrService'
 export { adminService } from './adminService'

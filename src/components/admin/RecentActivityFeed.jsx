@@ -1,4 +1,4 @@
-import { Card, Timeline, Typography, theme } from 'antd'
+import { Card, Empty, Timeline, Typography, theme } from 'antd'
 import {
   UserAddOutlined, IdcardOutlined, SolutionOutlined,
   FileTextOutlined, TrophyOutlined,
@@ -60,7 +60,11 @@ export function RecentActivityFeed({ activities }) {
       title="Recent Activity"
       extra={<Link>View All</Link>}
     >
-      <Timeline mode="left" items={timelineItems} />
+      {timelineItems.length > 0 ? (
+        <Timeline mode="left" items={timelineItems} />
+      ) : (
+        <Empty description="No recent activity yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+      )}
     </Card>
   )
 }
