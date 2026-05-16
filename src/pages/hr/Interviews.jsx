@@ -102,6 +102,9 @@ export function Interviews() {
                 onClose={() => setShareTarget(null)}
                 interviewToken={shareTarget?.interview_token}
                 interviewName={shareTarget?.name}
+                interviewId={shareTarget?.id || shareTarget?._id}
+                jobId={shareTarget?.job_id}
+                candidateId={shareTarget?.candidate_id}
             />
         </div>
     );

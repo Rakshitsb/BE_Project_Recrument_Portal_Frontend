@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, Typography, Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { InterviewerDetailModal } from './InterviewerDetailModal';
+import { getInterviewerMedia } from './interviewerAssets';
 
 const { Text } = Typography;
 
@@ -9,7 +10,7 @@ export function InterviewerCard({ interviewer }) {
     const [modalOpen, setModalOpen] = useState(false);
     const [imageError, setImageError] = useState(false);
 
-    const imageUrl = interviewer.image ? `${import.meta.env.VITE_API_BASE_URL}${interviewer.image}` : null;
+    const { imageUrl } = getInterviewerMedia(interviewer);
 
     return (
         <>

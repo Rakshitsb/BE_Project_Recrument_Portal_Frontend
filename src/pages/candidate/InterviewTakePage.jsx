@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Button, Card, Typography, Avatar, Input,
@@ -16,6 +16,7 @@ import {
   registerCall,
   updateTabSwitchCount
 } from '../../services/candidateInterviewService'
+import { getInterviewerMedia } from '../../components/interview/interviewerAssets'
 
 const retellClient = new RetellWebClient()
 
@@ -29,6 +30,266 @@ function validateEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
+function getDurationSeconds(duration) {
+  if (typeof duration === 'number') return duration * 60
+
+  const value = String(duration || '').toLowerCase()
+  const number = Number.parseInt(value, 10)
+  if (!Number.isFinite(number)) return 0
+
+  if (value.includes('sec')) return number
+  return number * 60
+}
+
+function getLatestTranscriptContent(transcript, role) {
+  if (!Array.isArray(transcript)) return ''
+
+  for (let i = transcript.length - 1; i >= 0; i -= 1) {
+    if (transcript[i]?.role === role && transcript[i]?.content) {
+      return transcript[i].content
+    }
+  }
+
+  return ''
+}
+
+function InterviewProgressBar({ elapsedSeconds, totalSeconds }) {
+  const percent = totalSeconds > 0 ? Math.min((elapsedSeconds / totalSeconds) * 100, 100) : 0
+
+  return (
+    <div style={{ width: '100%' }} aria-label="Interview progress">
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+        <Typography.Text strong style={{ color: '#0f172a' }}>Interview in progress</Typography.Text>
+        <Typography.Text type="secondary">
+          {formatDuration(elapsedSeconds)}
+          {totalSeconds > 0 ? ` / ${formatDuration(totalSeconds)}` : ''}
+        </Typography.Text>
+      </div>
+      <div style={{ height: 8, background: '#e2e8f0', borderRadius: 999, overflow: 'hidden' }}>
+        <div
+          style={{
+            width: `${percent}%`,
+            height: '100%',
+            background: '#0d9488',
+            borderRadius: 999,
+            transition: 'width 0.3s ease'
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function SpeakerPanel({
+  title,
+  transcript,
+  avatarSrc,
+  avatarIcon,
+  active,
+  accentColor,
+  transcriptRef
+}) {
+  return (
+    <section
+      style={{
+        flex: 1,
+        minWidth: 0,
+        border: active ? `1px solid ${accentColor}` : '1px solid #e2e8f0',
+        borderRadius: 16,
+        background: active ? '#f0fdfa' : '#fff',
+        boxShadow: active ? `0 0 0 4px ${accentColor}1f` : '0 1px 3px rgba(15,23,42,0.06)',
+        padding: 20,
+        transition: 'all 0.2s ease'
+      }}
+      aria-label={`${title} transcript panel`}
+    >
+      <div
+        ref={transcriptRef}
+        style={{
+          height: 190,
+          overflowY: 'auto',
+          borderRadius: 12,
+          border: '1px solid #e5e7eb',
+          background: '#f8fafc',
+          padding: 18,
+          marginBottom: 18
+        }}
+      >
+        <Typography.Paragraph
+          style={{
+            color: transcript ? '#0f172a' : '#94a3b8',
+            fontSize: 18,
+            lineHeight: 1.6,
+            margin: 0,
+            whiteSpace: 'pre-wrap'
+          }}
+        >
+          {transcript || (active ? 'Listening...' : 'Transcript will appear here.')}
+        </Typography.Paragraph>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+        <Avatar
+          size={104}
+          src={avatarSrc}
+          icon={avatarIcon}
+          style={{
+            backgroundColor: avatarSrc ? '#fff' : accentColor,
+            border: active ? `5px solid ${accentColor}` : '5px solid #e2e8f0',
+            boxShadow: active ? `0 0 0 8px ${accentColor}26, 0 12px 30px ${accentColor}33` : 'none',
+            transition: 'all 0.2s ease'
+          }}
+        />
+        <Typography.Text strong style={{ color: '#0f172a', fontSize: 15 }}>{title}</Typography.Text>
+        <Typography.Text style={{ color: active ? accentColor : '#64748b', fontSize: 13 }}>
+          {active ? 'Speaking now' : 'Waiting'}
+        </Typography.Text>
+      </div>
+    </section>
+  )
+}
+
+function LiveCallScreen({
+  interview,
+  activeTurn,
+  lastInterviewerResponse,
+  lastUserResponse,
+  callDuration,
+  tabSwitchCount,
+  isMuted,
+  onMuteToggle,
+  onEndCall,
+  userTranscriptRef
+}) {
+  const { imageUrl } = getInterviewerMedia(interview?.interviewer)
+  const totalSeconds = getDurationSeconds(interview?.time_duration)
+
+  return (
+    <div style={{ width: '100%', maxWidth: 1120 }}>
+      <div className="interview-mobile-block">
+        <Typography.Title level={4} style={{ marginTop: 0 }}>Use a desktop or laptop</Typography.Title>
+        <Typography.Text type="secondary">
+          Live voice interviews need a larger screen and stable microphone controls.
+        </Typography.Text>
+      </div>
+      <Card
+        className="interview-call-card"
+        style={{
+          borderRadius: 20,
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 18px 50px rgba(15,23,42,0.10)',
+          padding: 8
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start' }}>
+            <div>
+              <Typography.Title level={3} style={{ margin: 0, color: '#0f172a' }}>
+                Live AI Interview
+              </Typography.Title>
+              <Typography.Text type="secondary">
+                {interview?.interviewer?.name || 'AI Interviewer'} is conducting your interview.
+              </Typography.Text>
+            </div>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '8px 12px',
+                borderRadius: 999,
+                background: '#ecfeff',
+                border: '1px solid #99f6e4',
+                color: '#0f766e',
+                fontWeight: 600
+              }}
+            >
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: '#0d9488',
+                  display: 'inline-block'
+                }}
+                className="pulse"
+              />
+              Connected
+            </div>
+          </div>
+
+          <InterviewProgressBar elapsedSeconds={callDuration} totalSeconds={totalSeconds} />
+
+          {tabSwitchCount > 0 && (
+            <Alert
+              type="warning"
+              showIcon
+              message={`Tab switch detected (${tabSwitchCount} time${tabSwitchCount > 1 ? 's' : ''}). This is being recorded.`}
+              style={{ borderRadius: 10 }}
+            />
+          )}
+
+          <div className="interview-speaker-grid" style={{ display: 'flex', gap: 20, alignItems: 'stretch' }}>
+            <SpeakerPanel
+              title="Interviewer"
+              transcript={lastInterviewerResponse}
+              avatarSrc={imageUrl}
+              avatarIcon={<UserOutlined />}
+              active={activeTurn === 'agent'}
+              accentColor="#0d9488"
+            />
+            <SpeakerPanel
+              title="You"
+              transcript={lastUserResponse}
+              avatarIcon={<UserOutlined />}
+              active={activeTurn === 'user'}
+              accentColor="#6366f1"
+              transcriptRef={userTranscriptRef}
+            />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 14, paddingTop: 4 }}>
+            <Button
+              size="large"
+              icon={isMuted ? <AudioMutedOutlined /> : <AudioOutlined />}
+              onClick={onMuteToggle}
+              aria-label={isMuted ? 'Unmute microphone' : 'Mute microphone'}
+              style={{
+                minWidth: 132,
+                height: 46,
+                borderRadius: 999,
+                color: isMuted ? '#ef4444' : '#0d9488',
+                borderColor: isMuted ? '#fecaca' : '#99f6e4',
+                background: isMuted ? '#fef2f2' : '#f0fdfa'
+              }}
+            >
+              {isMuted ? 'Muted' : 'Mic on'}
+            </Button>
+            <Button
+              danger
+              size="large"
+              icon={<PhoneOutlined style={{ transform: 'rotate(135deg)' }} />}
+              onClick={onEndCall}
+              aria-label="End interview"
+              style={{
+                minWidth: 168,
+                height: 46,
+                borderRadius: 999,
+                backgroundColor: '#ef4444',
+                borderColor: '#ef4444',
+                color: '#fff',
+                fontWeight: 700
+              }}
+            >
+              End Interview
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  )
+}
+
 export default function InterviewTakePage() {
   const { token } = useParams()
   const navigate = useNavigate()
@@ -37,15 +298,18 @@ export default function InterviewTakePage() {
   const [stage, setStage]               = useState('loading')
   const [interview, setInterview]       = useState(null)
   const [callId, setCallId]             = useState('')
-  const [interviewId, setInterviewId]   = useState('')
   const [candidateName, setCandidateName] = useState(user?.name || '')
   const [candidateEmail, setCandidateEmail] = useState(user?.email || '')
   const [activeTurn, setActiveTurn]     = useState('') // 'agent' | 'user'
+  const [lastInterviewerResponse, setLastInterviewerResponse] = useState('')
+  const [lastUserResponse, setLastUserResponse] = useState('')
   const [isMuted, setIsMuted]           = useState(false)
   const [tabSwitchCount, setTabSwitchCount] = useState(0)
   const [callDuration, setCallDuration] = useState(0)
   const [starting, setStarting]         = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const userTranscriptRef = useRef(null)
+  const interviewerMedia = getInterviewerMedia(interview?.interviewer)
 
   useEffect(() => {
     async function fetchInterview() {
@@ -107,12 +371,31 @@ export default function InterviewTakePage() {
     retellClient.on('agent_start_talking', () => setActiveTurn('agent'))
     retellClient.on('agent_stop_talking', () => setActiveTurn('user'))
 
+    retellClient.on('update', (update) => {
+      const transcript = Array.isArray(update) ? update : update?.transcript
+      const latestAgentText = getLatestTranscriptContent(transcript, 'agent')
+      const latestUserText = getLatestTranscriptContent(transcript, 'user')
+
+      if (latestAgentText) setLastInterviewerResponse(latestAgentText)
+      if (latestUserText) setLastUserResponse(latestUserText)
+
+      const lastItem = Array.isArray(transcript) ? transcript[transcript.length - 1] : null
+      if (lastItem?.role === 'agent' || lastItem?.role === 'user') {
+        setActiveTurn(lastItem.role)
+      }
+    })
+
     retellClient.on('error', (err) => {
       console.error('Retell error:', err)
       setStage('error')
       setErrorMessage('A call error occurred. Please refresh and try again.')
     })
   }, [])
+
+  useEffect(() => {
+    if (!userTranscriptRef.current) return
+    userTranscriptRef.current.scrollTop = userTranscriptRef.current.scrollHeight
+  }, [lastUserResponse])
 
   async function handleStartCall() {
     if (!candidateName.trim() || !candidateEmail.trim()) {
@@ -123,7 +406,6 @@ export default function InterviewTakePage() {
     try {
       const data = await registerCall(token, candidateName.trim(), candidateEmail.trim())
       setCallId(data.call_id)
-      setInterviewId(data.interview_id)
       await retellClient.startCall({ accessToken: data.access_token })
     } catch (err) {
       setStarting(false)
@@ -201,7 +483,7 @@ export default function InterviewTakePage() {
       {stage === 'intro' && interview && (
         <Card style={{ maxWidth: 520, width: '100%', borderRadius: 16, boxShadow: '0 4px 24px rgba(0,0,0,0.08)', padding: 8 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
-            <Avatar size={80} src={`${import.meta.env.VITE_API_BASE_URL}${interview.interviewer.image}`} style={{ border: '3px solid #e0f2fe' }} icon={<UserOutlined />} />
+            <Avatar size={96} src={interviewerMedia.imageUrl} style={{ border: '3px solid #e0f2fe', backgroundColor: '#fff' }} icon={<UserOutlined />} />
             <Typography.Title level={4} style={{ margin: '12px 0 4px' }}>{interview.interviewer.name}</Typography.Title>
             <Typography.Text type="secondary" style={{ fontSize: 13, textAlign: 'center' }}>{interview.interviewer.description}</Typography.Text>
           </div>
@@ -258,6 +540,21 @@ export default function InterviewTakePage() {
       )}
 
       {stage === 'calling' && interview && (
+        <LiveCallScreen
+          interview={interview}
+          activeTurn={activeTurn}
+          lastInterviewerResponse={lastInterviewerResponse}
+          lastUserResponse={lastUserResponse}
+          callDuration={callDuration}
+          tabSwitchCount={tabSwitchCount}
+          isMuted={isMuted}
+          onMuteToggle={handleMuteToggle}
+          onEndCall={handleEndCall}
+          userTranscriptRef={userTranscriptRef}
+        />
+      )}
+
+      {stage === 'calling_legacy' && interview && (
         <div style={{ maxWidth: 600, width: '100%', textAlign: 'center' }}>
           <Card style={{ borderRadius: 16, marginBottom: 24, padding: 8 }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>

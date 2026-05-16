@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Skeleton, Result, Button, Empty, Divider, Alert } from 'antd';
+import { Typography, Skeleton, Result, Button, Empty } from 'antd';
 import { getInterviewers } from '../../services/interviewerService';
 import { InterviewerCard } from '../../components/interview/InterviewerCard';
 
@@ -60,17 +60,6 @@ export function Interviewers() {
                     </div>
                 )}
             </div>
-
-            <Divider />
-
-            <Alert
-                type="info"
-                showIcon
-                message="Interviewers are AI personas configured by your administrator."
-                description="Contact your admin to add or modify interviewer personas."
-                className="mt-4"
-                style={{ marginTop: 16 }}
-            />
         </div>
     );
 }

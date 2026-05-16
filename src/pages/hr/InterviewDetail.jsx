@@ -324,6 +324,9 @@ export function InterviewDetail() {
                 onClose={() => setShareModalOpen(false)}
                 interviewToken={interview?.interview_token}
                 interviewName={interview?.name}
+                interviewId={interview?.id || interview?._id}
+                jobId={interview?.job_id}
+                candidateId={interview?.candidate_id}
             />
         </div>
     );
