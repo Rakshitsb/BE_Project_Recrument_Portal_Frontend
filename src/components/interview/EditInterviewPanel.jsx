@@ -5,6 +5,7 @@ import {
 } from 'antd';
 import { DeleteOutlined, SaveOutlined } from '@ant-design/icons';
 import { updateInterview, archiveInterview } from '../../services/interviewService';
+import { sendHRMessage } from '../../services/chatbotService';
 
 export function EditInterviewPanel({ interview, onSaved, onArchived }) {
     const [name, setName]               = useState(interview?.name || '');
@@ -12,6 +13,7 @@ export function EditInterviewPanel({ interview, onSaved, onArchived }) {
     const [isActive, setIsActive]       = useState(interview?.is_active ?? true);
     const [context, setContext]         = useState(interview?.context || '');
     const [regenerate, setRegenerate]   = useState(false);
+    const [sendUpdatedInvite, setSendUpdatedInvite] = useState(false);
     const [saving, setSaving]           = useState(false);
     const [archiving, setArchiving]     = useState(false);
 
@@ -21,7 +23,21 @@ export function EditInterviewPanel({ interview, onSaved, onArchived }) {
         setIsActive(interview?.is_active ?? true);
         setContext(interview?.context || '');
         setRegenerate(false);
+        setSendUpdatedInvite(false);
     }, [interview?.id]);
+
+    async function sendUpdatedInterviewInvite(updatedInterview) {
+        const baseUrl = import.meta.env.VITE_FRONTEND_URL || window.location.origin;
+        const interviewUrl = `${baseUrl}/interview/${updatedInterview.interview_token}`;
+        const titleLabel = updatedInterview.name || 'this position';
+
+        await sendHRMessage(updatedInterview.job_id, updatedInterview.candidate_id, {
+            message: `Your AI-powered interview for ${titleLabel} has been updated with fresh questions. Click the button below to take the interview again when you are ready. Good luck!`,
+            interview_link: interviewUrl,
+            interview_id: updatedInterview.id || updatedInterview._id,
+            message_type: 'interview_invite',
+        });
+    }
 
     async function handleSave() {
         if (!name.trim()) {
@@ -30,18 +46,30 @@ export function EditInterviewPanel({ interview, onSaved, onArchived }) {
         }
         setSaving(true);
         try {
-            await updateInterview(interview.id, {
+            const updatedInterview = await updateInterview(interview.id, {
                 name: name.trim(),
                 time_duration: timeDuration,
-                is_active: isActive,
+                is_active: regenerate ? true : isActive,
                 context: context.trim(),
                 regenerate_questions: regenerate,
             });
-            message.success('Interview updated successfully');
+
+            if (regenerate && sendUpdatedInvite) {
+                try {
+                    await sendUpdatedInterviewInvite(updatedInterview);
+                    message.success('Interview updated and candidate notified');
+                } catch (inviteError) {
+                    message.warning(inviteError.response?.data?.detail || 'Interview updated, but the message could not be sent.');
+                }
+            } else {
+                message.success('Interview updated successfully');
+            }
+
             setRegenerate(false);
+            setSendUpdatedInvite(false);
             onSaved();
         } catch (err) {
-            message.error('Failed to save changes');
+            message.error(err.response?.data?.detail || 'Failed to save changes');
         } finally {
             setSaving(false);
         }
@@ -60,7 +88,7 @@ export function EditInterviewPanel({ interview, onSaved, onArchived }) {
                     await archiveInterview(interview.id);
                     message.success('Interview archived');
                     onArchived();
-                } catch (err) {
+                } catch {
                     message.error('Failed to archive interview');
                 } finally {
                     setArchiving(false);
@@ -123,18 +151,36 @@ export function EditInterviewPanel({ interview, onSaved, onArchived }) {
                 </Form.Item>
 
                 <Form.Item>
-                    <Checkbox checked={regenerate} onChange={e => setRegenerate(e.target.checked)}>
+                    <Checkbox
+                        checked={regenerate}
+                        onChange={e => {
+                            const checked = e.target.checked;
+                            setRegenerate(checked);
+                            setSendUpdatedInvite(checked);
+                        }}
+                    >
                         Regenerate AI questions using updated context
                     </Checkbox>
                     {regenerate && (
                         <Alert
                             type="warning"
                             showIcon
-                            message="This will replace all current questions with newly AI-generated ones."
+                            message="This will replace the questions, reactivate the interview, and let the candidate start a fresh attempt."
                             style={{ marginTop: 8 }}
                         />
                     )}
                 </Form.Item>
+
+                {regenerate && (
+                    <Form.Item>
+                        <Checkbox
+                            checked={sendUpdatedInvite}
+                            onChange={e => setSendUpdatedInvite(e.target.checked)}
+                        >
+                            Send updated interview message to candidate after saving
+                        </Checkbox>
+                    </Form.Item>
+                )}
             </Form>
 
             <Button

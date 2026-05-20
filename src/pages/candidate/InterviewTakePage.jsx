@@ -151,6 +151,7 @@ function SpeakerPanel({
 
 function LiveCallScreen({
   interview,
+  userAvatarSrc,
   activeTurn,
   lastInterviewerResponse,
   lastUserResponse,
@@ -241,7 +242,7 @@ function LiveCallScreen({
             <SpeakerPanel
               title="You"
               transcript={lastUserResponse}
-              avatarSrc={user?.avatarUrl || user?.avatar_url}
+              avatarSrc={userAvatarSrc}
               avatarIcon={<UserOutlined />}
               active={activeTurn === 'user'}
               accentColor="#6366f1"
@@ -543,6 +544,7 @@ export default function InterviewTakePage() {
       {stage === 'calling' && interview && (
         <LiveCallScreen
           interview={interview}
+          userAvatarSrc={user?.avatarUrl || user?.avatar_url}
           activeTurn={activeTurn}
           lastInterviewerResponse={lastInterviewerResponse}
           lastUserResponse={lastUserResponse}

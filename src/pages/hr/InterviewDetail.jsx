@@ -31,6 +31,7 @@ export function InterviewDetail() {
 
     const fetchInterview = () => {
         setInterviewLoading(true);
+        setInterviewError(null);
         return getInterviewById(interviewId)
             .then(data => {
                 setInterview(data);
@@ -42,6 +43,19 @@ export function InterviewDetail() {
             });
     };
 
+    const fetchResponses = () => {
+        setResponsesLoading(true);
+        return getResponsesByInterviewId(interviewId)
+            .then(data => {
+                setResponses(data || []);
+                setResponsesLoading(false);
+            })
+            .catch(err => {
+                console.error('Failed to fetch responses:', err);
+                setResponsesLoading(false);
+            });
+    };
+
     useEffect(() => {
         if (!view) {
             setSearchParams({ view: 'summary' }, { replace: true });
@@ -49,21 +63,12 @@ export function InterviewDetail() {
     }, [view, setSearchParams]);
 
     useEffect(() => {
-        setResponsesLoading(true);
-        setInterviewError(null);
-
-        Promise.all([
-            fetchInterview(),
-            getResponsesByInterviewId(interviewId)
-                .then(data => {
-                    setResponses(data || []);
-                    setResponsesLoading(false);
-                })
-                .catch(err => {
-                    console.error('Failed to fetch responses:', err);
-                    setResponsesLoading(false);
-                })
-        ]);
+        Promise.resolve().then(() => {
+            Promise.all([
+                fetchInterview(),
+                fetchResponses()
+            ]);
+        });
     }, [interviewId]);
 
     useEffect(() => {
@@ -95,7 +100,7 @@ export function InterviewDetail() {
         try {
             await updateInterview(interviewId, { is_active: checked });
             message.success(`Interview ${checked ? 'activated' : 'deactivated'}`);
-        } catch (error) {
+        } catch {
             setInterview(prev => ({ ...prev, is_active: previousState }));
             message.error('Failed to update status');
         }
@@ -297,7 +302,7 @@ export function InterviewDetail() {
                     ) : view === 'edit' ? (
                         <EditInterviewPanel
                           interview={interview}
-                          onSaved={() => fetchInterview(interviewId)}
+                          onSaved={() => Promise.all([fetchInterview(), fetchResponses()])}
                           onArchived={() => navigate('/hr/interviews')}
                         />
                     ) : view === 'response' && rid ? (
